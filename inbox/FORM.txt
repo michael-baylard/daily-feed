@@ -1,0 +1,21 @@
+Add a game, show, movie, publisher, or person to the daily feed.
+
+A new row is picked up on the next 3pm America/Chicago run.
+
+Types: game, show, movie, publisher, person.
+
+Put one item in a block. To add another, put a line that is exactly --- and fill the next block. Delete a block you are not using.
+
+url can be repeated. twitch, steam_app_id, and tvmaze_id are optional.
+
+type: movie
+name: Spider-Man: No Way Home
+url: https://www.marvel.com/movies/spider-man-no-way-home
+
+---
+type:
+name:
+url:
+twitch:
+steam_app_id:
+tvmaze_id:

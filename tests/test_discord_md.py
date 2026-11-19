@@ -1,0 +1,129 @@
+"""Discord markdown body for one Update."""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+import pytest
+
+from daily_feed.discord_md import render
+from daily_feed.models import Kind, Update
+
+BATMAN_RENDER = (
+    "## The Batman\n"
+    "**New trailer**\n"
+    "- Trailer drops Friday.\n"
+    "- Runtime is 176 minutes.\n"
+    "\n"
+    "[Open movie](https://example.com/the-batman)\n"
+    "-# page"
+)
+
+
+def _update(**overrides: object) -> Update:
+    data: dict[str, object] = {
+        "slug": "the-batman",
+        "kind": Kind.movie,
+        "name": "The Batman",
+        "title": "New trailer",
+        "published_at": datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc),
+        "url": "https://example.com/the-batman",
+        "lines": ("Trailer drops Friday.", "Runtime is 176 minutes."),
+        "source": "page",
+    }
+    data.update(overrides)
+    return Update(**data)  # type: ignore[arg-type]
+
+
+def test_render_batman_snapshot() -> None:
+    text = render(_update())
+    assert text == BATMAN_RENDER
+    assert "## The Batman" in text
+    assert "[Open movie](https://example.com/the-batman)" in text
+    assert any(line.startswith("-# page") for line in text.splitlines())
+
+
+def test_render_strips_everyone_from_line() -> None:
+    text = render(_update(lines=("hello @everyone",)))
+    assert "@everyone" not in text.lower()
+    assert "hello" in text
+    assert "- hello" in text.splitlines()
+
+
+def test_render_strips_here() -> None:
+    text = render(_update(lines=("room @HERE now",)))
+    assert "@here" not in text.lower()
+    assert "<@" not in text
+
+
+def test_render_strips_user_mention() -> None:
+    text = render(_update(lines=("cast <@123> listed",)))
+    assert "<@" not in text
+    assert "<@123>" not in text
+
+
+def test_render_strips_role_mention() -> None:
+    text = render(_update(lines=("mods <@&123> listed",)))
+    assert "<@" not in text
+    assert "<@&" not in text
+    assert "<@&123>" not in text
+
+
+def test_render_empty_lines_still_have_header_and_link() -> None:
+    text = render(_update(lines=()))
+    assert text.startswith("## The Batman\n")
+    assert "[Open movie](https://example.com/the-batman)" in text
+    assert any(line.startswith("-# page") for line in text.splitlines())
+    assert "- " not in text
+    expected = (
+        "## The Batman\n"
+        "**New trailer**\n"
+        "\n"
+        "[Open movie](https://example.com/the-batman)\n"
+        "-# page"
+    )
+    assert text == expected
+
+
+def test_render_has_no_trailing_spaces() -> None:
+    text = render(
+        _update(
+            name="The Batman @everyone",
+            title="New trailer @here",
+            lines=("line <@123> ",),
+            source="page <@&9>",
+        )
+    )
+    assert all(not line.endswith(" ") for line in text.split("\n"))
+    assert "@everyone" not in text.lower()
+    assert "@here" not in text.lower()
+    assert "<@" not in text
+
+
+def test_render_strips_name_title_and_source() -> None:
+    text = render(
+        _update(
+            name="The Batman @everyone",
+            title="News @HERE",
+            source="page <@123>",
+            lines=(),
+        )
+    )
+    assert text.splitlines()[0] == "## The Batman"
+    assert "**News**" in text
+    assert any(line.startswith("-# page") for line in text.splitlines())
+    assert "@everyone" not in text.lower()
+    assert "@here" not in text.lower()
+    assert "<@" not in text
+
+
+def test_render_label_uses_kind_value() -> None:
+    url = "https://example.com/item"
+    for kind in Kind:
+        text = render(_update(kind=kind, url=url, lines=()))
+        assert f"[Open {kind.value}]({url})" in text
+
+
+def test_render_rejects_ping_left_in_url() -> None:
+    with pytest.raises(ValueError, match="@everyone"):
+        render(_update(url="https://example.com/@everyone"))

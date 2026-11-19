@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+state.json
+inbox/*
+!inbox/FORM.txt
+.coverage
+dist/
+*.egg-info/

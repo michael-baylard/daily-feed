@@ -1,0 +1,43 @@
+items:
+  - kind: game
+    name: Helldivers 2
+    urls:
+      - https://store.steampowered.com/app/553850/Helldivers_2/
+    steam_app_id: 553850
+    tvmaze_id: null
+    twitch_login: null
+  - kind: show
+    name: Shogun
+    urls:
+      - https://www.fxnetworks.com/shows/shogun
+    steam_app_id: null
+    tvmaze_id: 43031
+    twitch_login: null
+  - kind: movie
+    name: "Spider-Man: No Way Home"
+    urls:
+      - https://www.marvel.com/movies/spider-man-no-way-home
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: null
+  - kind: publisher
+    name: DC Comics
+    urls:
+      - https://www.dc.com/blog
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: null
+  - kind: publisher
+    name: Marvel
+    urls:
+      - https://www.marvel.com/articles
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: null
+  - kind: person
+    name: Lirik
+    urls:
+      - https://www.twitch.tv/lirik
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: lirik

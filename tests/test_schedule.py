@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
-from daily_feed.schedule import CHICAGO, RUN_HOUR, due, local_day
+from daily_feed.schedule import CHICAGO, RUN_HOUR, days_until, due, due_hourly, local_day
 
 _YESTERDAY = date(2026, 11, 18)
 _TODAY = date(2026, 11, 19)
@@ -43,3 +43,29 @@ def test_local_day_uses_chicago_not_the_utc_date() -> None:
     assert local_day(now) == _TODAY
     assert due(now, _YESTERDAY) is True
     assert due(now, _TODAY) is False
+
+
+def test_hourly_is_due_when_the_streamer_has_never_posted() -> None:
+    now = datetime(2026, 11, 19, 16, 0, tzinfo=timezone.utc)
+    assert due_hourly(now, None) is True
+
+
+def test_hourly_is_not_due_inside_the_same_hour() -> None:
+    now = datetime(2026, 11, 19, 16, 30, tzinfo=timezone.utc)
+    last = now - timedelta(minutes=20)
+    assert due_hourly(now, last) is False
+
+
+def test_countdown_window_is_seven_days_through_the_day() -> None:
+    event = date(2026, 11, 26)
+    assert days_until(date(2026, 11, 18), event) is None
+    assert days_until(date(2026, 11, 19), event) == 7
+    assert days_until(date(2026, 11, 25), event) == 1
+    assert days_until(date(2026, 11, 26), event) == 0
+    assert days_until(date(2026, 11, 27), event) is None
+
+
+def test_hourly_is_due_after_one_hour() -> None:
+    now = datetime(2026, 11, 19, 17, 0, tzinfo=timezone.utc)
+    last = datetime(2026, 11, 19, 16, 0, tzinfo=timezone.utc)
+    assert due_hourly(now, last) is True

@@ -1,16 +1,71 @@
-Add a game, show, movie, publisher, or person to the daily feed.
-
+Copy the official spelling. The harness builds the search id from the name you type.
+A Twitch login is the name in the channel URL, lowercase, with no @.
 A new row is picked up on the next 3pm America/Chicago run.
+A movie trailer or release date posts at that hour from 7 days before, every day through that date. Use YYYY-MM-DD.
+Streamers are checked every hour, and only while they are live.
+AI news is only for a game, show, movie, or market already on this list. An AI mod for that title counts. A general AI product does not.
 
-Types: game, show, movie, publisher, person.
+Types: game, show, movie, publisher, person, streamer, tool, athlete, league, match.
 
-Put one item in a block. To add another, put a line that is exactly --- and fill the next block. Delete a block you are not using.
+One block per title. A line that is exactly --- starts the next block. Delete any block you are not using.
 
-url can be repeated. twitch, steam_app_id, and tvmaze_id are optional.
+type: streamer
+name: Tfue
+twitch: tfue
+url: https://www.twitch.tv/tfue
 
-type: movie
-name: Spider-Man: No Way Home
-url: https://www.marvel.com/movies/spider-man-no-way-home
+---
+type: streamer
+name: BurntPeanut
+twitch: burntpeanut
+url: https://www.twitch.tv/burntpeanut
+
+---
+type: game
+name: Grand Theft Auto Online
+steam_app_id: 271590
+url: https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/
+
+---
+type: game
+name: Grand Theft Auto VI
+url: https://www.rockstargames.com/VI
+
+---
+type: game
+name: ROB RUN
+steam_app_id: 4262460
+url: https://store.steampowered.com/app/4262460/ROB_RUN/
+
+---
+type: publisher
+name: Rockstar Games
+url: https://www.rockstargames.com/newswire
+
+---
+type: publisher
+name: Take-Two Interactive
+url: https://www.take2games.com/ir/press-releases
+
+---
+type: publisher
+name: Marvel
+url: https://www.marvel.com/articles
+
+---
+type: publisher
+name: DC Comics
+url: https://www.dc.com/blog
+
+---
+type: league
+name: NFL
+url: https://www.nfl.com/news/
+
+---
+type: publisher
+name: Conduct
+url: https://www.espn.com/search/_/q/racial%20slur
 
 ---
 type:
@@ -19,3 +74,5 @@ url:
 twitch:
 steam_app_id:
 tvmaze_id:
+trailer:
+releases:

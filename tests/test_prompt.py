@@ -51,3 +51,5 @@ def test_prompt_asks_for_three_plain_lines_without_mentions_or_links() -> None:
     assert "Return exactly 3 plain lines." in prompt
     assert "No @ mentions." in prompt
     assert "No links in the lines." in prompt
+    assert "AI only when it is about this title." in prompt
+    assert "A general model or tool launch is out of scope." in prompt

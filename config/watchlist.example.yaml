@@ -1,29 +1,36 @@
 items:
   - kind: game
-    name: Helldivers 2
+    name: Grand Theft Auto Online
     urls:
-      - https://store.steampowered.com/app/553850/Helldivers_2/
-    steam_app_id: 553850
+      - https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/
+    steam_app_id: 271590
     tvmaze_id: null
     twitch_login: null
-  - kind: show
-    name: Shogun
+  - kind: game
+    name: Grand Theft Auto VI
     urls:
-      - https://www.fxnetworks.com/shows/shogun
+      - https://www.rockstargames.com/VI
     steam_app_id: null
-    tvmaze_id: 43031
+    tvmaze_id: null
     twitch_login: null
-  - kind: movie
-    name: "Spider-Man: No Way Home"
+  - kind: game
+    name: ROB RUN
     urls:
-      - https://www.marvel.com/movies/spider-man-no-way-home
+      - https://store.steampowered.com/app/4262460/ROB_RUN/
+    steam_app_id: 4262460
+    tvmaze_id: null
+    twitch_login: null
+  - kind: publisher
+    name: Rockstar Games
+    urls:
+      - https://www.rockstargames.com/newswire
     steam_app_id: null
     tvmaze_id: null
     twitch_login: null
   - kind: publisher
-    name: DC Comics
+    name: Take-Two Interactive
     urls:
-      - https://www.dc.com/blog
+      - https://www.take2games.com/ir/press-releases
     steam_app_id: null
     tvmaze_id: null
     twitch_login: null
@@ -34,10 +41,35 @@ items:
     steam_app_id: null
     tvmaze_id: null
     twitch_login: null
-  - kind: person
-    name: Lirik
+  - kind: publisher
+    name: DC Comics
     urls:
-      - https://www.twitch.tv/lirik
+      - https://www.dc.com/blog
     steam_app_id: null
     tvmaze_id: null
-    twitch_login: lirik
+    twitch_login: null
+  - kind: league
+    name: NFL
+    urls:
+      - https://www.nfl.com/news/
+  - kind: publisher
+    name: Conduct
+    urls:
+      - https://www.espn.com/search/_/q/racial%20slur
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: null
+  - kind: person
+    name: Tfue
+    urls:
+      - https://www.twitch.tv/tfue
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: tfue
+  - kind: person
+    name: BurntPeanut
+    urls:
+      - https://www.twitch.tv/burntpeanut
+    steam_app_id: null
+    tvmaze_id: null
+    twitch_login: burntpeanut

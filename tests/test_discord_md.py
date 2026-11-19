@@ -6,17 +6,14 @@ from datetime import datetime, timezone
 
 import pytest
 
-from daily_feed.discord_md import render
+from daily_feed.discord_md import KIND_EMOJI, render
 from daily_feed.models import Kind, Update
 
 BATMAN_RENDER = (
-    "## The Batman\n"
-    "**New trailer**\n"
+    "🎬 The Batman - #page\n"
+    "**[New trailer](https://example.com/the-batman)**\n"
     "- Trailer drops Friday.\n"
-    "- Runtime is 176 minutes.\n"
-    "\n"
-    "[Open movie](https://example.com/the-batman)\n"
-    "-# page"
+    "- Runtime is 176 minutes."
 )
 
 
@@ -38,9 +35,10 @@ def _update(**overrides: object) -> Update:
 def test_render_batman_snapshot() -> None:
     text = render(_update())
     assert text == BATMAN_RENDER
-    assert "## The Batman" in text
-    assert "[Open movie](https://example.com/the-batman)" in text
-    assert any(line.startswith("-# page") for line in text.splitlines())
+    assert "🎬 The Batman - #page" in text
+    assert "[New trailer](https://example.com/the-batman)" in text
+    assert "Open movie" not in text
+    assert not any(line.startswith("-#") for line in text.splitlines())
 
 
 def test_render_strips_everyone_from_line() -> None:
@@ -71,16 +69,13 @@ def test_render_strips_role_mention() -> None:
 
 def test_render_empty_lines_still_have_header_and_link() -> None:
     text = render(_update(lines=()))
-    assert text.startswith("## The Batman\n")
-    assert "[Open movie](https://example.com/the-batman)" in text
-    assert any(line.startswith("-# page") for line in text.splitlines())
-    assert "- " not in text
+    assert text.startswith("🎬 The Batman - #page\n")
+    assert "[New trailer](https://example.com/the-batman)" in text
+    assert not any(line.startswith("-#") for line in text.splitlines())
+    assert not any(line.startswith("- ") for line in text.splitlines())
     expected = (
-        "## The Batman\n"
-        "**New trailer**\n"
-        "\n"
-        "[Open movie](https://example.com/the-batman)\n"
-        "-# page"
+        "🎬 The Batman - #page\n"
+        "**[New trailer](https://example.com/the-batman)**"
     )
     assert text == expected
 
@@ -109,19 +104,37 @@ def test_render_strips_name_title_and_source() -> None:
             lines=(),
         )
     )
-    assert text.splitlines()[0] == "## The Batman"
-    assert "**News**" in text
-    assert any(line.startswith("-# page") for line in text.splitlines())
+    assert text.splitlines()[0].startswith("🎬 The Batman - #page")
+    assert "**[News](https://example.com/the-batman)**" in text
+    assert not any(line.startswith("-#") for line in text.splitlines())
     assert "@everyone" not in text.lower()
     assert "@here" not in text.lower()
     assert "<@" not in text
 
 
-def test_render_label_uses_kind_value() -> None:
+def test_render_emoji_and_linked_title_for_each_kind() -> None:
     url = "https://example.com/item"
     for kind in Kind:
         text = render(_update(kind=kind, url=url, lines=()))
-        assert f"[Open {kind.value}]({url})" in text
+        assert text.splitlines()[0].startswith(KIND_EMOJI[kind] + " ")
+        assert f"**[New trailer]({url})**" in text
+        assert "Open " not in text
+
+
+def test_render_links_the_name_when_the_title_repeats_it() -> None:
+    text = render(
+        _update(
+            kind=Kind.person,
+            name="BurntPeanut",
+            title="BurntPeanut is live",
+            lines=("BurntPeanut is live",),
+            url="https://www.twitch.tv/burntpeanut",
+            source="twitch",
+        )
+    )
+    assert text == (
+        "🔴 **[BurntPeanut](https://www.twitch.tv/burntpeanut)** - #twitch"
+    )
 
 
 def test_render_rejects_ping_left_in_url() -> None:

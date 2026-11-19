@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
@@ -52,6 +53,8 @@ def _load_item(raw: object) -> WatchItem:
         steam_app_id=_optional_int(raw.get("steam_app_id")),
         tvmaze_id=_optional_int(raw.get("tvmaze_id")),
         twitch_login=_optional_text(raw.get("twitch_login")),
+        trailer_on=_optional_date(raw.get("trailer_on")),
+        releases_on=_optional_date(raw.get("releases_on")),
     )
 
 
@@ -80,6 +83,21 @@ def _optional_int(value: object) -> int | None:
     raise ValueError("expected int")
 
 
+def _optional_date(value: object) -> date | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value.strip())
+        except ValueError as exc:
+            raise ValueError("expected YYYY-MM-DD") from exc
+    raise ValueError("expected YYYY-MM-DD")
+
+
 def _optional_text(value: object) -> str | None:
     if value is None:
         return None
@@ -96,4 +114,6 @@ def _dump_item(item: WatchItem) -> dict[str, object]:
         "steam_app_id": item.steam_app_id,
         "tvmaze_id": item.tvmaze_id,
         "twitch_login": item.twitch_login,
+        "trailer_on": item.trailer_on.isoformat() if item.trailer_on else None,
+        "releases_on": item.releases_on.isoformat() if item.releases_on else None,
     }

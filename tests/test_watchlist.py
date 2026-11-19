@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -16,22 +17,34 @@ EXAMPLE = Path(__file__).resolve().parents[1] / "config" / "watchlist.example.ya
 def test_example_has_required_rows():
     watchlist = load_watchlist(EXAMPLE)
     by_name = {(item.kind, item.name): item for item in watchlist.items}
-    game = by_name[Kind.game, "Helldivers 2"]
-    assert game.steam_app_id == 553850
-    assert any("store.steampowered.com" in url for url in game.urls)
-    show = next(item for item in watchlist.items if item.kind is Kind.show)
-    assert show.name
-    assert show.tvmaze_id == 43031
-    movie = by_name[Kind.movie, "Spider-Man: No Way Home"]
-    assert any("marvel.com" in url for url in movie.urls)
+    online = by_name[Kind.game, "Grand Theft Auto Online"]
+    assert online.steam_app_id == 271590
+    assert any("store.steampowered.com" in url for url in online.urls)
+    six = by_name[Kind.game, "Grand Theft Auto VI"]
+    assert six.steam_app_id is None
+    assert "https://www.rockstargames.com/VI" in six.urls
+    rob = by_name[Kind.game, "ROB RUN"]
+    assert rob.steam_app_id == 4262460
+    assert any("4262460" in url for url in rob.urls)
+    assert "https://www.rockstargames.com/newswire" in by_name[Kind.publisher, "Rockstar Games"].urls
+    assert "https://www.take2games.com/ir/press-releases" in by_name[Kind.publisher, "Take-Two Interactive"].urls
+    assert not any(item.kind is Kind.show for item in watchlist.items)
+    assert not any(item.kind is Kind.movie for item in watchlist.items)
     dc = by_name[Kind.publisher, "DC Comics"]
     assert "https://www.dc.com/blog" in dc.urls
     marvel = by_name[Kind.publisher, "Marvel"]
     assert "https://www.marvel.com/articles" in marvel.urls
-    person = next(item for item in watchlist.items if item.kind is Kind.person)
-    assert person.twitch_login == "lirik"
-    assert person.twitch_login == person.twitch_login.lower()
-    assert "https://www.twitch.tv/lirik" in person.urls
+    tfue = by_name[Kind.person, "Tfue"]
+    assert tfue.twitch_login == "tfue"
+    assert "https://www.twitch.tv/tfue" in tfue.urls
+    burnt = by_name[Kind.person, "BurntPeanut"]
+    assert burnt.twitch_login == "burntpeanut"
+    assert burnt.twitch_login == burnt.twitch_login.lower()
+    assert "https://www.twitch.tv/burntpeanut" in burnt.urls
+    assert by_name[Kind.league, "NFL"].name == "NFL"
+    conduct = by_name[Kind.publisher, "Conduct"]
+    assert "https://www.espn.com/search/_/q/racial%20slur" in conduct.urls
+    assert len(watchlist.items) == 11
 
 
 def test_example_omits_slug_and_load_fills_it():
@@ -79,7 +92,8 @@ def test_round_trip_save_does_not_drop_urls(tmp_path: Path):
     assert "https://www.dc.com/blog" in flat
     assert "https://www.marvel.com/articles" in flat
     assert any("store.steampowered.com" in url for url in flat)
-    assert any("spider-man-no-way-home" in url for url in flat)
+    assert "https://www.rockstargames.com/VI" in flat
+    assert "https://www.twitch.tv/tfue" in flat
 
 
 def test_round_trip_keeps_custom_slug(tmp_path: Path):
@@ -119,6 +133,22 @@ def test_save_null_optionals_round_trip(tmp_path: Path):
     assert loaded.tvmaze_id is None
     assert loaded.twitch_login is None
     assert loaded.urls == ("https://example.com/dune",)
+
+
+def test_dates_round_trip(tmp_path: Path):
+    item = WatchItem(
+        Kind.movie,
+        "The Batman",
+        "the_batman",
+        urls=("https://example.com/the-batman",),
+        trailer_on=date(2026, 11, 26),
+        releases_on=date(2026, 12, 18),
+    )
+    path = tmp_path / "batman.yaml"
+    save_watchlist(path, Watchlist(items=[item]))
+    loaded = load_watchlist(path).items[0]
+    assert loaded.trailer_on == date(2026, 11, 26)
+    assert loaded.releases_on == date(2026, 12, 18)
 
 
 def test_bad_kind_raises(tmp_path: Path):

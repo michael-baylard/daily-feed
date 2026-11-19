@@ -28,6 +28,9 @@ def build_prompt(item: WatchItem, page_text: str) -> str:
         "Return exactly 3 plain lines.\n"
         "No @ mentions.\n"
         "No links in the lines.\n"
+        "AI only when it is about this title.\n"
+        "An AI mod, or this game, show, movie, or league using AI, is in scope.\n"
+        "A general model or tool launch is out of scope.\n"
         "\n"
         f"{body}"
     )

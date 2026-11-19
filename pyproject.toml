@@ -3,7 +3,11 @@ name = "daily-feed"
 version = "0.1.0"
 description = "Once-a-day watchlist that posts Discord markdown for games, shows, movies, publishers, and Twitch streamers."
 requires-python = ">=3.12"
-dependencies = ["pyyaml", "tzdata"]
+dependencies = [
+    "langgraph>=1.2.23",
+    "pyyaml",
+    "tzdata",
+]
 
 [project.optional-dependencies]
 dev = ["pytest"]
@@ -14,6 +18,10 @@ daily-feed = "daily_feed.cli:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+filterwarnings = [
+    # langsmith 0.15.0 still calls asyncio.iscoroutinefunction. Python 3.14 warns.
+    "ignore:'asyncio.iscoroutinefunction':DeprecationWarning:langsmith",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

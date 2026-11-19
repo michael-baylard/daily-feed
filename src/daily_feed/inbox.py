@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from daily_feed.models import Kind, WatchItem, Watchlist
 from daily_feed.slug import to_slug
 
@@ -12,6 +14,14 @@ _KINDS = {
     "publisher": Kind.publisher,
     "person": Kind.person,
     "streamer": Kind.person,
+    "tool": Kind.tool,
+    "ai": Kind.tool,
+    "harness": Kind.tool,
+    "athlete": Kind.athlete,
+    "player": Kind.athlete,
+    "league": Kind.league,
+    "nfl": Kind.league,
+    "match": Kind.match,
 }
 
 
@@ -63,6 +73,8 @@ def _parse_record(record: str) -> WatchItem | None:
         return None
     kind_raw = _first(fields, "type")
     name = _first(fields, "name")
+    if not kind_raw and not name:
+        return None
     if not kind_raw:
         raise ValueError("missing type")
     if not name:
@@ -79,6 +91,8 @@ def _parse_record(record: str) -> WatchItem | None:
         steam_app_id=_optional_int(fields, "steam_app_id"),
         tvmaze_id=_optional_int(fields, "tvmaze_id"),
         twitch_login=_twitch_login(_first(fields, "twitch")),
+        trailer_on=_optional_date(fields, "trailer"),
+        releases_on=_optional_date(fields, "releases"),
     )
 
 
@@ -97,6 +111,16 @@ def _optional_int(fields: dict[str, list[str]], key: str) -> int | None:
         return int(raw)
     except ValueError as exc:
         raise ValueError(f"{key} must be an int") from exc
+
+
+def _optional_date(fields: dict[str, list[str]], key: str) -> date | None:
+    raw = _first(fields, key)
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError as exc:
+        raise ValueError(f"{key} must be YYYY-MM-DD") from exc
 
 
 def _twitch_login(value: str) -> str | None:

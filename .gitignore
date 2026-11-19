@@ -8,3 +8,7 @@ inbox/*
 .coverage
 dist/
 *.egg-info/
+.env
+.env.local
+graphify-out/
+out/

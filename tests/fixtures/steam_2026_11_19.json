@@ -1,0 +1,71 @@
+{
+  "pulled": "2026-11-19",
+  "gta_newest": {
+    "appnews": {
+      "appid": 271590,
+      "newsitems": [
+        {
+          "gid": "1849827110429433",
+          "title": "It's time for GTA 5's last challenge: 20 more mods aimed at finally breaking it completely",
+          "url": "https://steamstore-a.akamaihd.net/news/externalpost/PC Gamer/1849827110429433",
+          "contents": "It is time to say goodbye to Grand Theft Auto 5. Did we not say goodbye <a href=\"https://www.pcgamer.com/games/grand-theft-auto/its-almost-time-to-say-goodbye-to-modding-gta-5-if-the-game-doesnt-shatter-into-a-thousand-pieces-first/\">literally yesterday</a>, when I installed a mod named Farewell Los Santos, and there was even a video and everything, and we put <a href=\"https://bsky.app/profile/joshuawolens.bsky.social/post/3n2m5bwgay225\" target=\"_blank\">Komm Susser Tod over it</a>?.. <a href=\"https://www.pcgamer.com/games/grand-theft-auto/its-time-for-gta-5s-last-challenge-20-more-mods-aimed-at-finally-breaking-it-completely/?utm_source=steam&utm_medium=referral\" target=\"_blank\">Read more.</a>",
+          "date": 1795111200,
+          "feedlabel": "PC Gamer",
+          "feedname": "PC Gamer",
+          "appid": 271590
+        }
+      ]
+    }
+  },
+  "gta_official": {
+    "appnews": {
+      "appid": 271590,
+      "newsitems": [
+        {
+          "gid": "1848664643345005",
+          "title": "Take Down the Kortz Center and More High-Value Targets in The Heist Event",
+          "url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1848664643345005",
+          "contents": "Get in, get out, and make a killing in this week\u2019s GTA Online Heist Event. Assemble a crew of familiar faces or perfect strangers, gather your gear, execute a robbery, and exfiltrate safely to earn doubled first-time completion bonuses for completing all the Original Heists, The Doomsday Heist, and The Diamond Casino Heist. To commemorate The Kortz Center Heist\u2019s inaugural Heist Event, you and your accomplices are guaranteed to find The Outcome of Endeavour \u2014 previously only available to those w...",
+          "date": 1793961092,
+          "feedlabel": "Community Announcements",
+          "feedname": "steam_community_announcements",
+          "appid": 271590
+        }
+      ]
+    }
+  },
+  "rob_patch": {
+    "appnews": {
+      "appid": 4262460,
+      "newsitems": [
+        {
+          "gid": "1849458702693254",
+          "title": "Patch Notes",
+          "url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1849458702693254",
+          "contents": "A fresh set of changes is already live! In this update, we\u2019ve made several quality-of-life adjustments, tweaked a few in-game limits, and fixed some connection issues.Here\u2019s the full list of changes:Added a profanity filter for character names.Made the Report button on the death screen more noticeable.Added Shipments to Lenny\u2019s context menu.Your progress and Battle Pass points will now carry over if you change regions.Added an option to invert the mouse Y-axis.Introduced the day and general limi...",
+          "date": 1794914385,
+          "feedlabel": "Community Announcements",
+          "feedname": "steam_community_announcements",
+          "appid": 4262460
+        }
+      ]
+    }
+  },
+  "rob_faq": {
+    "appnews": {
+      "appid": 4262460,
+      "newsitems": [
+        {
+          "gid": "1849192144187218",
+          "title": "ROB RUN: Answering Your Most Frequently Asked Questions",
+          "url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1849192144187218",
+          "contents": "Today, we\u2019re answering the most frequently asked questions on our socials. We see your feedback and are closely following all the discussions\u2014just because we don\u2019t reply to every single comment doesn\u2019t mean we haven\u2019t read it!Recently, we covered the most pressing issues (server instability, DDoS attacks, progress loss, and cheaters) and how we're tackling them.Now, we\u2019re sharing what we plan to change, what we\u2019ve decided to leave as is for now \u2014 and why.Why Is It So Difficult to Join the Police...",
+          "date": 1794575833,
+          "feedlabel": "Community Announcements",
+          "feedname": "steam_community_announcements",
+          "appid": 4262460
+        }
+      ]
+    }
+  }
+}

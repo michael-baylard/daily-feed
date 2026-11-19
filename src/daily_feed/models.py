@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 
@@ -13,6 +13,10 @@ class Kind(str, Enum):
     movie = "movie"
     publisher = "publisher"
     person = "person"
+    tool = "tool"
+    athlete = "athlete"
+    league = "league"
+    match = "match"
 
 
 @dataclass(frozen=True)
@@ -24,6 +28,8 @@ class WatchItem:
     steam_app_id: int | None = None
     tvmaze_id: int | None = None
     twitch_login: str | None = None
+    trailer_on: date | None = None
+    releases_on: date | None = None
 
 
 @dataclass(frozen=True)
@@ -38,6 +44,7 @@ class Update:
     url: str
     lines: tuple[str, ...]
     source: str
+    image: str = ""
 
 
 @dataclass

@@ -7,6 +7,7 @@ from datetime import date, datetime, timezone
 from daily_feed.hashing import content_hash
 from daily_feed.models import Kind, WatchItem
 from daily_feed.sources import (
+    countdown_update,
     page_update,
     steam_news_update,
     tvmaze_episode_update,
@@ -171,10 +172,18 @@ def test_twitch_returns_none_without_a_login() -> None:
     assert twitch_update(item, live, None) is None
 
 
-def test_twitch_returns_none_when_title_unchanged() -> None:
+def test_twitch_skips_when_the_title_is_unchanged() -> None:
     item = WatchItem(kind=Kind.person, name="Lirik", slug="lirik", twitch_login="Lirik")
     live = {"user_login": "lirik", "title": "ranked", "started_at": "2026-11-19T21:05:00Z"}
     assert twitch_update(item, live, "ranked") is None
+
+
+def test_twitch_missing_started_at_does_not_raise() -> None:
+    item = WatchItem(kind=Kind.person, name="BurntPeanut", slug="burntpeanut", twitch_login="burntpeanut")
+    live = {"user_login": "burntpeanut", "title": "ranked", "started_at": ""}
+    update = twitch_update(item, live, None)
+    assert update is not None
+    assert update.published_at == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def test_twitch_posts_matching_login_with_started_at_utc() -> None:
@@ -186,3 +195,39 @@ def test_twitch_posts_matching_login_with_started_at_utc() -> None:
     assert update.lines == ("ranked",)
     assert update.published_at == datetime(2026, 11, 19, 21, 5, tzinfo=timezone.utc)
     assert update.url == "https://www.twitch.tv/Lirik"
+
+
+def test_countdown_starts_seven_days_out_and_stops_after() -> None:
+    item = WatchItem(
+        kind=Kind.movie,
+        name="The Batman",
+        slug="the_batman",
+        urls=("https://example.com/the-batman",),
+        trailer_on=date(2026, 11, 26),
+    )
+    early = countdown_update(item, date(2026, 11, 18))
+    first = countdown_update(item, date(2026, 11, 19))
+    day_of = countdown_update(item, date(2026, 11, 26))
+    after = countdown_update(item, date(2026, 11, 27))
+    assert early is None
+    assert after is None
+    assert first is not None and first.title == "Trailer in 7 days" and first.lines == ()
+    assert day_of is not None and day_of.title == "Trailer today"
+    assert first.source == "countdown"
+    assert first.url == "https://example.com/the-batman"
+
+
+def test_countdown_keeps_the_second_date_as_its_own_line() -> None:
+    item = WatchItem(
+        kind=Kind.movie,
+        name="The Batman",
+        slug="the_batman",
+        urls=("https://example.com/the-batman",),
+        trailer_on=date(2026, 11, 21),
+        releases_on=date(2026, 11, 26),
+    )
+    update = countdown_update(item, date(2026, 11, 19))
+    assert update is not None
+    assert update.title == "Trailer in 2 days"
+    assert update.lines == ("In theaters in 7 days",)
+    assert update.title not in update.lines

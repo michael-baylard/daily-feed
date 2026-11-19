@@ -1,0 +1,21 @@
+---
+description: Parent coordinates. Subagents do wide search, review, and doc passes.
+alwaysApply: true
+---
+
+# Subagents
+
+Parent writes the answer. A subagent gets a short brief and the paths it needs, then returns a compact summary. Do not paste a raw path dump into the chat.
+
+| When | Who | Model |
+|---|---|---|
+| Wide locate, 3+ files, 15+ hits | caveman-explore | composer-2.5-fast |
+| Diff or multi-file review | caveman-review | composer-2.5-fast |
+| Tests, lint, a live pull | highspeed | composer-2.5-fast |
+| Docs a person will read | md-plain-language | composer-2.5-fast |
+| Claimed done, before push | adversarial-verifier | inherit |
+| One file, one fact | stay in the parent | — |
+
+Under about 40% of the context window, the parent edits. Past that, pass a brief and paths, not a transcript. Past about 75%, write a handoff (goal, paths, decisions, the verify command) and start a new chat.
+
+Skip a spawn for a one-line fix. Do not copy another repo's domain rules into this one.

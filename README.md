@@ -1,29 +1,35 @@
 # daily-feed
 
-A watchlist that runs once a day at 3pm America/Chicago. It posts Discord markdown for the games, shows, movies, publishers, and Twitch streamers you locked in. It does not ping anyone.
+A watchlist that posts Discord markdown for a locked list. It does not ping anyone.
 
-A new row in `inbox/` is picked up on the next run.
+Streamers post every hour, and only while that login is live. Everything else posts at 3pm America/Chicago, and only when the source changed.
 
-## What stays cheap
-
-The harness checks the list every day. It calls a model only when a movie or publisher page has changed. Steam news, a TVMaze episode, and a locked Twitch title are read from the payload. Those posts skip the model.
-
-Names share one id. `Spider-Man: No Way Home` becomes `spider_man_no_way_home`. The letters-only search key is `spidermannowayhome`. The prompt includes both, so a later search hits the same string the file uses.
+The real cards from November 19, 2026 are in [examples/discord-posts.md](examples/discord-posts.md). Ranks are in [examples/topics.md](examples/topics.md).
 
 ## Locked list
 
-Only rows on the watchlist can post. A Twitch update must match that person's login. DC Comics and Marvel are publishers with their own page URLs. A fetched slug that is not on the list is dropped.
+Only rows on the watchlist can post. Copy `config/watchlist.example.yaml` to start.
 
-Copy `config/watchlist.example.yaml` to start. Kinds: `game`, `show`, `movie`, `publisher`, `person`.
+| Kind | Rows |
+|---|---|
+| game | Grand Theft Auto Online, Grand Theft Auto VI, ROB RUN |
+| publisher | Rockstar Games, Take-Two Interactive, Marvel, DC Comics, Conduct |
+| league | NFL |
+| person | Tfue, BurntPeanut |
+
+Steam, the Rockstar newswire, ESPN's NFL feed, and the Conduct feed are fetched. GTA VI, Take-Two, Marvel, and DC are still page rows, so a run sends nothing for them. Twitch needs `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`.
+
+The channel URL stays in `.env` as `DISCORD_WEBHOOK_URL`. One webhook, one channel.
 
 ## Add a title
 
 Friends copy `inbox/FORM.txt`. One block per title. A line that is exactly `---` starts the next block.
 
 ```
-type: movie
-name: The Batman
-url: https://example.com/the-batman
+type: game
+name: ROB RUN
+steam_app_id: 4262460
+url: https://store.steampowered.com/app/4262460/ROB_RUN/
 ```
 
 `streamer` is a person. `twitch:` sets the login. A leading `@` is removed.
@@ -32,18 +38,24 @@ url: https://example.com/the-batman
 
 ```powershell
 uv sync --extra dev
-uv run daily-feed due --now 2026-11-19T21:00:00+00:00
 uv run pytest
+uv run daily-feed due --now 2026-11-19T21:00:00+00:00
 ```
 
 `due` prints `yes` at or after 3pm America/Chicago when today's run has not happened yet.
+
+Real cards, no Discord post:
+
+```powershell
+uv run daily-feed run --watchlist config/watchlist.example.yaml --state state.json --inbox inbox --no-post
+```
+
+Offline shape check. Fixed demo payloads, no network, no post:
 
 ```powershell
 uv run daily-feed run --watchlist config/watchlist.example.yaml --state state.json --inbox inbox --dry-run --demo
 ```
 
-`--dry-run` prints the messages and does not post. Live page fetch and the Discord webhook POST are the next wiring step. The run, the order, and the safety checks are already tested.
+`--dry-run` alone prints `not due` or nothing, because it does not fetch. A run without `--no-post` or `--dry-run` posts to Discord. The picture from the source is attached when there is one.
 
-Posts go out oldest first. Each message is a header, a few lines, a masked link, and a small source line. `@everyone`, `@here`, and user or role mentions are stripped before send.
-
-130 tests cover slugs, the form, dedupe, order, pings, the 3pm gate, and the lock to listed streamers and publishers.
+Posts go out oldest first. Each message starts with an emoji, then the name and a `#source` tag on that same line, then the title as the link. A title that only repeats the name is dropped, and that name is the link. `@everyone`, `@here`, and user or role mentions are stripped before send.

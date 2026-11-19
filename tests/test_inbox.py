@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,23 @@ def test_parse_movie():
     assert item.urls == ("https://www.marvel.com/movies/spider-man-no-way-home",)
     assert item.steam_app_id is None
     assert item.twitch_login is None
+
+
+def test_parse_movie_trailer_and_release_dates():
+    items = parse_request(
+        "type: movie\n"
+        "name: The Batman\n"
+        "url: https://example.com/the-batman\n"
+        "trailer: 2026-11-26\n"
+        "releases: 2026-12-18\n"
+    )
+    assert items[0].trailer_on == date(2026, 11, 26)
+    assert items[0].releases_on == date(2026, 12, 18)
+
+
+def test_bad_trailer_date_raises():
+    with pytest.raises(ValueError, match="trailer"):
+        parse_request("type: movie\nname: The Batman\ntrailer: next friday\n")
 
 
 def test_parse_publisher():
@@ -142,6 +160,10 @@ def test_missing_name_raises():
         parse_request("type: movie\nurl: https://example.com/dune\n")
 
 
+def test_blank_template_is_skipped():
+    assert parse_request("type:\nname:\nurl:\ntwitch:\n") == []
+
+
 def test_missing_type_raises():
     with pytest.raises(ValueError, match="missing type"):
         parse_request("name: Dune\nurl: https://example.com/dune\n")
@@ -213,10 +235,12 @@ def test_merge_does_not_mutate_caller_list():
 def test_form_states_types_and_pickup_time():
     text = FORM.read_text(encoding="utf-8")
     assert "A new row is picked up on the next 3pm America/Chicago run." in text
-    assert "Types: game, show, movie, publisher, person." in text
+    assert "type: streamer" in text
+    assert "BurntPeanut" in text
+    assert "type: league" in text
+    assert "NFL" in text
+    assert "tool" in text
     assert "\n---\n" in text
-    example, template = text.split("\n---\n", 1)
-    assert "type: movie" in example
-    assert "Spider-Man: No Way Home" in example
+    _example, template = text.split("\n---\n", 1)
     assert "type:" in template
     assert "name:" in template

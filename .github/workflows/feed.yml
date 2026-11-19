@@ -1,0 +1,39 @@
+name: feed
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Post the feed
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ] || [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "Add GEMINI_API_KEY and DISCORD_WEBHOOK_URL under Settings, Secrets and variables, Actions."
+            exit 1
+          fi
+          mkdir -p inbox
+          uv run daily-feed run \
+            --watchlist config/watchlist.example.yaml \
+            --state state.json \
+            --inbox inbox
+      - name: Remember what was posted
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Remember what was posted."
+          git push

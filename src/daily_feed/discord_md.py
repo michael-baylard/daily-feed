@@ -59,33 +59,13 @@ def render(update: Update) -> str:
     return text
 
 
-_KIND_LABEL = {
-    Kind.game: "Games",
-    Kind.show: "Shows",
-    Kind.movie: "Movies",
-    Kind.publisher: "Publishers",
-    Kind.person: "People",
-    Kind.tool: "Tools",
-    Kind.athlete: "Athletes",
-    Kind.league: "NFL",
-    Kind.match: "Matches",
-}
-
-
 def render_digest(updates: list[Update]) -> list[str]:
-    """One Discord message per kind. Stories inside it are split by a blank line."""
-    buckets: dict[Kind, list[Update]] = {}
-    order: list[Kind] = []
-    for update in updates:
-        if update.kind not in buckets:
-            order.append(update.kind)
-            buckets[update.kind] = []
-        buckets[update.kind].append(update)
+    """One Discord message per card, so each article link can show its picture."""
     messages: list[str] = []
-    for kind in order:
-        header = f"{KIND_EMOJI[kind]} {_KIND_LABEL[kind]}"
-        stories = [_story(update) for update in buckets[kind]]
-        messages.extend(_pack(header, stories))
+    for update in updates:
+        text = _story(update).strip()
+        assert_no_pings(text)
+        messages.append(text)
     return messages
 
 
@@ -102,29 +82,13 @@ def _story(update: Update) -> str:
         if line.casefold() not in {folded_name, folded_title, *(f"{folded_name} {word}" for word in _FILLER)}
     ]
     tag = f" - #{source}" if source else ""
+    emoji = _TWITCH_EMOJI if source == "twitch" else KIND_EMOJI[update.kind]
     if title and folded_title not in {folded_name, *(f"{folded_name} {word}" for word in _FILLER)}:
-        parts = [f"**{name}**{tag}", _link(title, update.url)]
+        parts = [f"{emoji} **{name}**{tag}", _link(title, update.url)]
     else:
-        parts = [f"{_link(name, update.url)}{tag}"]
+        parts = [f"{emoji} {_link(name, update.url)}{tag}"]
     parts.extend(f"- {line}" for line in kept)
     return "\n".join(parts)
-
-
-def _pack(header: str, stories: list[str]) -> list[str]:
-    messages: list[str] = []
-    current = header
-    for story in stories:
-        nxt = f"{current}\n\n{story}"
-        if len(nxt) > 1800 and current != header:
-            messages.append(current)
-            current = f"{header}\n\n{story}"
-        else:
-            current = nxt
-    if current != header:
-        text = current.strip()
-        assert_no_pings(text)
-        messages.append(text)
-    return messages
 
 
 def _link(label: str, url: str) -> str:

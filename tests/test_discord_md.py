@@ -159,12 +159,15 @@ def test_digest_groups_a_kind_and_splits_stories() -> None:
     )
     game = _update(kind=Kind.game, name="Grand Theft Auto Online", title="Kortz Center", source="steam")
     messages = render_digest([game, bears, hippo])
-    assert messages[0].startswith("🎮 Games")
+    assert len(messages) == 3
+    assert messages[0].startswith("🎮")
     assert "Grand Theft Auto Online" in messages[0]
-    nfl = messages[1]
-    assert nfl.startswith("🏆 NFL")
-    assert "\n\n**NFL**" in nfl
-    assert nfl.index("Bears win") < nfl.index("Fiona the hippo")
+    assert "https://store.steampowered.com/app/1" in messages[0] or "Kortz" in messages[0]
+    assert messages[1].startswith("🏆")
+    assert "Bears win" in messages[1]
+    assert "Fiona" not in messages[1]
+    assert messages[2].startswith("🏆")
+    assert "Fiona the hippo" in messages[2]
 
 
 def test_render_rejects_ping_left_in_url() -> None:

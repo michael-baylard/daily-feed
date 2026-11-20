@@ -169,10 +169,18 @@ def _lines(text: str) -> tuple[str, ...]:
     return tuple(lines)
 
 
+def _seed(text: str) -> int:
+    return sum(text.encode()) or 1
+
+
 def cadence(seed: str) -> str:
     """A sentence shape for this story. The next story gets a different one."""
-    total = sum(seed.encode()) or 1
-    return _CADENCE[total % len(_CADENCE)]
+    return _CADENCE[_seed(seed) % len(_CADENCE)]
+
+
+def swears(seed: str) -> bool:
+    """About half the cards. The same story keeps the same answer."""
+    return (_seed(seed) // len(_CADENCE)) % 2 == 0
 
 
 def joke_prompt(name: str, text: str, note: str = "") -> str:
@@ -186,6 +194,7 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
         "Keep it under 20 words. Short phrases. "
         "Prefer short words with a hard consonant: k, t, p, ck, g, d, b. "
         "Dark, dry, a little mean about the situation.\n"
+        f"{_profanity(text)}\n"
         "The joke has to already be in the facts. Do not invent a joke, a quote, or a detail. "
         "Do not impersonate anyone. Never be cruel to a private person.\n"
         "Do not start with Apparently, Naturally, Well, So, Look, Of course, Basically, Honestly, or Turns out. "
@@ -195,6 +204,15 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
         "No catchphrases. No hashtags. No links. No @ mentions. No HTML. No slur.\n\n"
         f"{text[:4000]}"
     )
+
+
+def _profanity(text: str) -> str:
+    if swears(text):
+        return (
+            "Use one sharp word about the situation. "
+            "Do not aim it at a person. Do not use a slur."
+        )
+    return "No profanity in this one."
 
 
 def _grok(text: str, name: str, note: str = "") -> str | None:

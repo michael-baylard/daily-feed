@@ -24,6 +24,8 @@ jobs:
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
         run: |
           if [ -z "$XAI_API_KEY" ] || [ -z "$DISCORD_WEBHOOK_URL" ]; then
             echo "Add XAI_API_KEY and DISCORD_WEBHOOK_URL under Settings, Secrets and variables, Actions."

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from daily_feed.models import Kind, WatchItem
 from daily_feed.run import collect
-from daily_feed.summarize import cadence, conduct_lines, condense, describe, joke_prompt, mask_slur
+from daily_feed.summarize import cadence, conduct_lines, condense, describe, joke_prompt, mask_slur, swears
 
 
 def test_each_story_gets_a_different_sentence_shape() -> None:
@@ -17,6 +17,13 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert "straight-faced satire desk" in prompt
     assert "Apparently" in prompt
     assert "hard consonant" in prompt
+    seeds = ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua", "GTA VI")
+    assert any(swears(seed) for seed in seeds)
+    assert any(not swears(seed) for seed in seeds)
+    loud = next(seed for seed in seeds if swears(seed))
+    quiet = next(seed for seed in seeds if not swears(seed))
+    assert "one ordinary curse" in joke_prompt("NFL", loud, "")
+    assert "No profanity" in joke_prompt("NFL", quiet, "")
 
 
 def test_short_news_still_asks_what_happened() -> None:

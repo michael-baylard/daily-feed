@@ -163,9 +163,12 @@ def _gemini(text: str, name: str, note: str = "") -> str | None:
     extra = f"{note.strip()}\n" if note.strip() else ""
     prompt = (
         f"Say what happened in one or two short sentences for a Discord post about {name}.\n"
+        "Write it dry and deadpan, the way a late-night comic tells a true story. "
+        "Ironic, a little mean to the situation, never mean to a private person. "
+        "Do not impersonate anyone. Do not invent a joke. Do not add facts.\n"
         f"{extra}"
-        "Use only the text below. Do not add facts.\n"
-        "No links. No @ mentions. No HTML.\n\n"
+        "Use only the text below.\n"
+        "No catchphrases. No hashtags. No links. No @ mentions. No HTML. No slur.\n\n"
         f"{text[:4000]}"
     )
     url = (
@@ -177,7 +180,7 @@ def _gemini(text: str, name: str, note: str = "") -> str | None:
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "maxOutputTokens": 256,
-                "temperature": 0.2,
+                "temperature": 0.6,
                 "thinkingConfig": {"thinkingBudget": 0},
             },
         }

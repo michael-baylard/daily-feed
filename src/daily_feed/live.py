@@ -22,6 +22,7 @@ from daily_feed.parallel import run_parallel
 
 _ROCKSTAR = "https://graph.rockstargames.com/"
 _NFL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=15"
+_BEARS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/chi/news?limit=15"
 _SEARCH = "https://site.api.espn.com/apis/search/v2?limit=8&query="
 _NOW = "https://now.core.api.espn.com/v1/sports/news/"
 _CONDUCT_QUERIES = ("racial slur", "homophobic", "anti-gay slur", "antisemitic")
@@ -51,11 +52,26 @@ def fetch_rockstar() -> list[dict]:
 
 
 def fetch_nfl() -> list[dict]:
-    """NFL headlines. nfl.com serves a shell, so this reads ESPN's public NFL feed."""
-    payload = _json(_NFL)
-    if not isinstance(payload, dict):
-        return []
-    return espn_articles(payload)
+    """NFL headlines plus the Chicago Bears team feed.
+
+    nfl.com serves a shell, so this reads ESPN. Bears stories are marked
+    ``focus=bears`` so a routine league headline cannot crowd them out.
+    """
+    general_payload = _json(_NFL)
+    bears_payload = _json(_BEARS)
+    general = espn_articles(general_payload) if isinstance(general_payload, dict) else []
+    bears = espn_articles(bears_payload) if isinstance(bears_payload, dict) else []
+    for article in bears:
+        article["focus"] = "bears"
+    ordered: list[dict] = []
+    seen: set[str] = set()
+    for article in [*bears, *general]:
+        url = str(article.get("url") or "")
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        ordered.append(article)
+    return ordered
 
 
 def fetch_conduct(now: datetime | None = None) -> list[dict]:

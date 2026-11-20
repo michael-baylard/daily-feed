@@ -11,14 +11,16 @@ from daily_feed.inbox import merge_inbox, parse_request
 from daily_feed.live import fetch_conduct, fetch_nfl, fetch_rockstar, fetch_steam, fetch_streams
 from daily_feed.models import Kind, WatchItem
 from daily_feed.parallel import run_parallel
+from daily_feed.discord_md import render_digest
 from daily_feed.post import send_messages
-from daily_feed.run import collect, page_prompts, remember, render_day, worth_sending
+from daily_feed.run import collect, page_prompts, remember, worth_sending
+from daily_feed.select import dedupe
 from daily_feed.schedule import CHICAGO, due, local_day
 from daily_feed.state import load_state, save_state
 from daily_feed.watchlist import load_watchlist, save_watchlist
 
 _USAGE = """\
-usage: daily-feed run --watchlist PATH --state PATH --inbox DIR [--dry-run] [--no-post] [--demo] [--now ISO]
+usage: daily-feed run --watchlist PATH --state PATH --inbox DIR [--dry-run] [--no-post] [--demo] [--repost] [--now ISO]
        daily-feed due --now ISO [--state PATH]
 """
 
@@ -105,6 +107,7 @@ def _run(argv: list[str]) -> int:
             "--dry-run": 0,
             "--no-post": 0,
             "--demo": 0,
+            "--repost": 0,
         },
     )
     watchlist_path = flags.get("--watchlist")
@@ -115,6 +118,7 @@ def _run(argv: list[str]) -> int:
     dry_run = bool(flags.get("--dry-run"))
     no_post = bool(flags.get("--no-post"))
     demo = bool(flags.get("--demo"))
+    repost = bool(flags.get("--repost"))
     now_text = flags.get("--now")
     now = _parse_now(now_text) if isinstance(now_text, str) else datetime.now(timezone.utc)
 
@@ -122,7 +126,8 @@ def _run(argv: list[str]) -> int:
     incoming = _read_inbox(Path(inbox_dir))
     watchlist, _added = merge_inbox(watchlist, incoming)
     state = load_state(state_path)
-    day_due = due(now, _coerce_day(state.get("last_run_day")))
+    gate_due = due(now, _coerce_day(state.get("last_run_day")))
+    day_due = gate_due or repost
     has_streamer = any(item.twitch_login for item in watchlist.items)
     if not day_due and not has_streamer:
         if dry_run:
@@ -134,22 +139,23 @@ def _run(argv: list[str]) -> int:
         fetched = _fetch_live(watchlist.items)
 
     since = _aware(now) - timedelta(days=7)
-    updates = collect(watchlist.items, fetched, state, now, since=since)
-    if not day_due:
+    reading = {**state, "seen_ids": []} if repost else state
+    updates = collect(watchlist.items, fetched, reading, now, since=since)
+    if not gate_due and not repost:
         updates = [update for update in updates if update.source == "twitch"]
-    updates = [update for update in updates if worth_sending(update)]
+    updates = dedupe([update for update in updates if worth_sending(update)])
     if not updates and not day_due:
         if dry_run:
             print("not due")
         return 0
-    messages = render_day(updates)
+    messages = render_digest(updates)
     if dry_run or no_post or demo:
         for message in messages:
             print(message)
         return 0
 
     prompts = page_prompts(watchlist.items, updates, fetched)
-    post_messages(messages, prompts, [update.image for update in updates])
+    post_messages(messages, prompts)
     save_state(state_path, remember(state, updates, fetched, now, stamp_day=day_due))
     save_watchlist(watchlist_path, watchlist)
     return 0

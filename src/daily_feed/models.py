@@ -45,6 +45,7 @@ class Update:
     lines: tuple[str, ...]
     source: str
     image: str = ""
+    focus: str = ""
 
 
 @dataclass

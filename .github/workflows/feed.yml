@@ -2,6 +2,11 @@ name: feed
 
 on:
   workflow_dispatch:
+    inputs:
+      repost:
+        description: Post this week's stories again
+        type: boolean
+        default: false
   schedule:
     - cron: "5 * * * *"
 
@@ -12,8 +17,8 @@ jobs:
   post:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --frozen
       - name: Post the feed
         env:
@@ -25,10 +30,15 @@ jobs:
             exit 1
           fi
           mkdir -p inbox
+          extra=""
+          if [ "${{ inputs.repost }}" = "true" ]; then
+            extra="--repost"
+          fi
           uv run daily-feed run \
             --watchlist config/watchlist.example.yaml \
             --state state.json \
-            --inbox inbox
+            --inbox inbox \
+            $extra
       - name: Remember what was posted
         run: |
           git config user.name "github-actions[bot]"

@@ -7,9 +7,9 @@ import pytest
 from daily_feed.post import message_body, webhook_url
 
 
-def test_payload_keeps_a_source_image() -> None:
-    body = message_body("hello", "https://a.espncdn.com/photo/story.jpg")
-    assert body["embeds"] == [{"image": {"url": "https://a.espncdn.com/photo/story.jpg"}}]
+def test_payload_does_not_attach_a_second_picture() -> None:
+    body = message_body("**[Story](https://www.espn.com/nfl/story/1)**", "https://a.espncdn.com/photo/story.jpg")
+    assert "embeds" not in body
     assert body["allowed_mentions"] == {"parse": []}
 
 

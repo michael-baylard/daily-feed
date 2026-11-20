@@ -50,18 +50,31 @@ def steam_news_updates(
         return []
     seen = {str(gid) for gid in seen_ids}
     header = str(payload.get("header_image") or "")
+    items = _newsitems(payload)
     found: list[Update] = []
-    for news in _newsitems(payload):
+    in_window = False
+    for news in items:
         gid = str(news.get("gid", "")).strip()
-        if not gid or gid in seen:
+        if not gid:
             continue
         stamp = _unix(news.get("date"))
         published = datetime.fromtimestamp(stamp, tz=timezone.utc)
         if published < since:
             continue
+        in_window = True
+        if gid in seen:
+            continue
         found.append(_steam_update(item, news, stamp, header))
     found.sort(key=lambda update: update.published_at)
-    return found[-limit:]
+    if found:
+        return found[-limit:]
+    if in_window or not items:
+        return []
+    latest = max(items, key=lambda news: _unix(news.get("date")))
+    gid = str(latest.get("gid", "")).strip()
+    if not gid or gid in seen:
+        return []
+    return [_steam_update(item, latest, _unix(latest.get("date")), header)]
 
 
 def tvmaze_episode_update(
@@ -278,6 +291,7 @@ def _article_update(item: WatchItem, article: dict, source: str) -> Update:
         lines=(text,),
         source=source,
         image=_https(str(article.get("image") or "")),
+        focus=str(article.get("focus") or ""),
     )
 
 

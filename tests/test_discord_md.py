@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from daily_feed.discord_md import KIND_EMOJI, render
+from daily_feed.discord_md import KIND_EMOJI, render, render_digest
 from daily_feed.models import Kind, Update
 
 BATMAN_RENDER = (
@@ -135,6 +135,36 @@ def test_render_links_the_name_when_the_title_repeats_it() -> None:
     assert text == (
         "🔴 **[BurntPeanut](https://www.twitch.tv/burntpeanut)** - #twitch"
     )
+
+
+def test_digest_groups_a_kind_and_splits_stories() -> None:
+    bears = _update(
+        slug="nfl",
+        kind=Kind.league,
+        name="NFL",
+        title="Bears win",
+        url="https://www.espn.com/nfl/story/bears",
+        lines=("Williams threw four.",),
+        source="nfl",
+    )
+    hippo = _update(
+        slug="nfl",
+        kind=Kind.league,
+        name="NFL",
+        title="Fiona the hippo",
+        url="https://www.espn.com/nfl/story/hippo",
+        lines=("The hippo stopped by.",),
+        source="nfl",
+        published_at=datetime(2026, 3, 2, 12, 0, tzinfo=timezone.utc),
+    )
+    game = _update(kind=Kind.game, name="Grand Theft Auto Online", title="Kortz Center", source="steam")
+    messages = render_digest([game, bears, hippo])
+    assert messages[0].startswith("🎮 Games")
+    assert "Grand Theft Auto Online" in messages[0]
+    nfl = messages[1]
+    assert nfl.startswith("🏆 NFL")
+    assert "\n\n**NFL**" in nfl
+    assert nfl.index("Bears win") < nfl.index("Fiona the hippo")
 
 
 def test_render_rejects_ping_left_in_url() -> None:

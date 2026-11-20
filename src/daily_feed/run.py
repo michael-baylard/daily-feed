@@ -17,6 +17,7 @@ from daily_feed.models import Kind, Update, WatchItem
 from daily_feed.order import sort_updates
 from daily_feed.prompt import build_prompt
 from daily_feed.safety import assert_no_pings
+from daily_feed.select import relevant
 from daily_feed.schedule import due, local_day
 from daily_feed.sources import (
     article_update,
@@ -192,6 +193,7 @@ def _ones(
             chosen = [article_update(item, articles, seen_ids, source)]
         else:
             chosen = article_updates(item, articles, seen_ids, source, since)
+        chosen = [update for update in chosen if update is not None and relevant(update)]
         return [posted for posted in (_daily(_short(update), day_due) for update in chosen) if posted is not None]
 
     if item.kind in _PAGE_KINDS:
@@ -232,12 +234,18 @@ def _page(item: WatchItem, data: dict, hashes: dict, now: datetime, day_due: boo
 
 
 def _needs_model(update: Update) -> bool:
-    """A news card with no short description has to be written by the model."""
+    """A news card with no short description has to be written by the model.
+
+    NFL always goes through the model so the line is written in the feed's voice.
+    A missing key leaves a short NFL sentence as the source wrote it.
+    """
     if update.source not in {"steam", "newswire", "nfl", "conduct"}:
         return False
     raw = "\n".join(update.lines).strip()
     if not raw:
         return False
+    if update.source == "nfl":
+        return True
     if len(raw) > 180:
         return True
     return raw.casefold() == update.title.casefold()
@@ -265,6 +273,8 @@ def _short(update: Update | None) -> Update | None:
     )
     if update.source == "conduct":
         lines = conduct_lines(raw, lines)
+    elif not lines and len(raw) <= 180 and raw.casefold() != update.title.casefold():
+        lines = update.lines
     return replace(update, lines=lines)
 
 

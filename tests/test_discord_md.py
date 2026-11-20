@@ -10,7 +10,7 @@ from daily_feed.discord_md import KIND_EMOJI, render, render_digest
 from daily_feed.models import Kind, Update
 
 BATMAN_RENDER = (
-    "🎬 The Batman - #page\n"
+    "🎬 The Batman\n"
     "**[New trailer](https://example.com/the-batman)**\n"
     "- Trailer drops Friday.\n"
     "- Runtime is 176 minutes."
@@ -35,7 +35,8 @@ def _update(**overrides: object) -> Update:
 def test_render_batman_snapshot() -> None:
     text = render(_update())
     assert text == BATMAN_RENDER
-    assert "🎬 The Batman - #page" in text
+    assert "🎬 The Batman\n" in text
+    assert "#page" not in text
     assert "[New trailer](https://example.com/the-batman)" in text
     assert "Open movie" not in text
     assert not any(line.startswith("-#") for line in text.splitlines())
@@ -69,12 +70,12 @@ def test_render_strips_role_mention() -> None:
 
 def test_render_empty_lines_still_have_header_and_link() -> None:
     text = render(_update(lines=()))
-    assert text.startswith("🎬 The Batman - #page\n")
+    assert text.startswith("🎬 The Batman\n")
     assert "[New trailer](https://example.com/the-batman)" in text
     assert not any(line.startswith("-#") for line in text.splitlines())
     assert not any(line.startswith("- ") for line in text.splitlines())
     expected = (
-        "🎬 The Batman - #page\n"
+        "🎬 The Batman\n"
         "**[New trailer](https://example.com/the-batman)**"
     )
     assert text == expected
@@ -104,7 +105,7 @@ def test_render_strips_name_title_and_source() -> None:
             lines=(),
         )
     )
-    assert text.splitlines()[0].startswith("🎬 The Batman - #page")
+    assert text.splitlines()[0] == "🎬 The Batman"
     assert "**[News](https://example.com/the-batman)**" in text
     assert not any(line.startswith("-#") for line in text.splitlines())
     assert "@everyone" not in text.lower()
@@ -133,7 +134,7 @@ def test_render_links_the_name_when_the_title_repeats_it() -> None:
         )
     )
     assert text == (
-        "🔴 **[BurntPeanut](https://www.twitch.tv/burntpeanut)** - #twitch"
+        "🔴 **[BurntPeanut](https://www.twitch.tv/burntpeanut)**"
     )
 
 

@@ -87,16 +87,17 @@ def test_matrix_non_twitch_does_not_use_red_circle(kind: Kind) -> None:
     assert not _header(text).startswith("🔴 ")
 
 
-# --- Source tag on header, empty source ---
+# --- Source name stays off the card ---
 
 
 @pytest.mark.parametrize(
     "source",
     ["page", "rss", "steam", "tvmaze", "imdb"],
 )
-def test_matrix_source_tag_appended_on_name_line(source: str) -> None:
+def test_matrix_source_is_not_printed(source: str) -> None:
     text = render(_update(source=source, lines=()))
-    assert _header(text).endswith(f" - #{source}")
+    assert f"#{source}" not in text
+    assert " - #" not in _header(text)
     _assert_no_dash_hash_source_line(text)
 
 
@@ -155,7 +156,7 @@ def test_matrix_distinct_title_two_line_minimum(kind: Kind) -> None:
 )
 def test_matrix_title_equals_name_name_is_only_link(name: str, title: str) -> None:
     text = render(_update(name=name, title=title, lines=()))
-    assert _lines(text) == [f"🎮 **[{name.replace('[', '').replace(']', '')}]({_URL})** - #rss"]
+    assert _lines(text) == [f"🎮 **[{name.replace('[', '').replace(']', '')}]({_URL})**"]
 
 
 @pytest.mark.parametrize("name,title,title_variant", _TITLE_FILLER_CASES)
@@ -338,11 +339,12 @@ def test_matrix_twitch_header_shape_name_linked() -> None:
             lines=(),
         )
     )
-    assert text == f"🔴 **[Nick]({url})** - #twitch"
+    assert text == f"🔴 **[Nick]({url})**"
 
 
 def test_matrix_source_tag_not_separate_bullet_with_lines() -> None:
     text = render(_update(source="imdb", lines=("Fact.",)))
-    assert _lines(text)[0].endswith(" - #imdb")
+    assert not _lines(text)[0].endswith(" - #imdb")
+    assert "#imdb" not in text
     assert _lines(text)[1].startswith("**[")
     assert _lines(text)[2] == "- Fact."

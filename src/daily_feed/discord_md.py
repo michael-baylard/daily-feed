@@ -29,7 +29,7 @@ def render(update: Update) -> str:
 
     Shape::
 
-        {emoji} {name} - #{source}
+        {emoji} {name}
         **[{title}]({url})**
         - {line}
     """
@@ -47,11 +47,10 @@ def render(update: Update) -> str:
         if line.casefold() not in {folded_name, folded_title, *(f"{folded_name} {word}" for word in _FILLER)}
     ]
 
-    tag = f" - #{source}" if source else ""
     if title and not title_repeats_name:
-        parts = [f"{emoji} {name}{tag}", _link(title, update.url)]
+        parts = [f"{emoji} {name}", _link(title, update.url)]
     else:
-        parts = [f"{emoji} {_link(name, update.url)}{tag}"]
+        parts = [f"{emoji} {_link(name, update.url)}"]
     parts.extend(f"- {line}" for line in kept)
 
     text = "\n".join(part.rstrip() for part in parts)
@@ -81,12 +80,11 @@ def _story(update: Update) -> str:
         for line in lines
         if line.casefold() not in {folded_name, folded_title, *(f"{folded_name} {word}" for word in _FILLER)}
     ]
-    tag = f" - #{source}" if source else ""
     emoji = _TWITCH_EMOJI if source == "twitch" else KIND_EMOJI[update.kind]
     if title and folded_title not in {folded_name, *(f"{folded_name} {word}" for word in _FILLER)}:
-        parts = [f"{emoji} **{name}**{tag}", _link(title, update.url)]
+        parts = [f"{emoji} **{name}**", _link(title, update.url)]
     else:
-        parts = [f"{emoji} {_link(name, update.url)}{tag}"]
+        parts = [f"{emoji} {_link(name, update.url)}"]
     parts.extend(f"- {line}" for line in kept)
     return "\n".join(parts)
 

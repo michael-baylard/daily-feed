@@ -439,8 +439,7 @@ def test_dry_run_demo_prints_markdown_without_network(
     assert "Hades" in out
     assert "The Batman" not in out
     assert "@everyone" not in out.lower()
-    assert "- #steam" in out
-    assert "#page" not in out
+    assert " - #" not in out
     assert watchlist.read_text(encoding="utf-8") == before
     assert not state.exists()
 

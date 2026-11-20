@@ -58,4 +58,4 @@ uv run daily-feed run --watchlist config/watchlist.example.yaml --state state.js
 
 `--dry-run` alone prints `not due` or nothing, because it does not fetch. A run without `--no-post` or `--dry-run` posts to Discord. Stories in one kind share a message, with a blank line between them. The article link brings the picture.
 
-Posts go out oldest first. Each message starts with an emoji, then the name and a `#source` tag on that same line, then the title as the link. A title that only repeats the name is dropped, and that name is the link. `@everyone`, `@here`, and user or role mentions are stripped before send.
+Posts go out oldest first. Each message starts with an emoji, then the name, then the title as the link. A title that only repeats the name is dropped, and that name is the link. `@everyone`, `@here`, and user or role mentions are stripped before send.

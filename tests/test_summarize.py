@@ -19,12 +19,13 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert "hard consonant" in prompt
     assert "End every sentence with a period" in prompt
     assert "comma" in prompt
-    seeds = ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua", "GTA VI")
-    assert any(swears(seed) for seed in seeds)
-    assert any(not swears(seed) for seed in seeds)
-    loud = next(seed for seed in seeds if swears(seed))
-    quiet = next(seed for seed in seeds if not swears(seed))
-    assert "one ordinary curse" in joke_prompt("NFL", loud, "")
+    sample = [swears(f"story {n}") for n in range(40)]
+    assert any(sample)
+    assert not all(sample)
+    assert 0.6 <= (sum(sample) / len(sample)) <= 0.9
+    loud = next(f"story {n}" for n in range(40) if swears(f"story {n}"))
+    quiet = next(f"story {n}" for n in range(40) if not swears(f"story {n}"))
+    assert "a sharp word" in joke_prompt("NFL", loud, "")
     assert "No profanity" in joke_prompt("NFL", quiet, "")
 
 

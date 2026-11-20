@@ -45,6 +45,7 @@ _STOCK = re.compile(
     r"^(apparently|naturally|well|so|look|of course|basically|honestly|turns out)\b",
     re.IGNORECASE,
 )
+_CURSE = re.compile(r"\b(?:nope|nope|nope)\w*\b", re.IGNORECASE)
 
 Complete = Callable[[str, str], str | None]
 
@@ -193,8 +194,8 @@ def cadence(seed: str) -> str:
 
 
 def swears(seed: str) -> bool:
-    """About half the cards. The same story keeps the same answer."""
-    return (_seed(seed) // len(_CADENCE)) % 2 == 0
+    """About three quarters of the cards. The same story keeps the same answer."""
+    return (_seed(seed) // len(_CADENCE)) % 4 != 0
 
 
 def joke_prompt(name: str, text: str, note: str = "") -> str:
@@ -225,8 +226,8 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
 def _profanity(text: str) -> str:
     if swears(text):
         return (
-            "Use one sharp word about the situation. "
-            "Do not aim it at a person. Do not use a slur."
+            "The sentence must contain exactly one sharp word. "
+            "The curse is about the situation. Do not aim it at a person. Do not use a slur."
         )
     return "No profanity in this one."
 
@@ -236,15 +237,21 @@ def _grok(text: str, name: str, note: str = "") -> str | None:
     if not key:
         return None
     model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
-    written = _complete(key, model, joke_prompt(name, text, note))
-    if written and _stock(written):
-        retry = (
-            joke_prompt(name, text, note)
-            + "\nCut the stock opener. New shape. Shorter. "
+    prompt = joke_prompt(name, text, note)
+    written = _complete(key, model, prompt)
+    if written and (_stock(written) or _missing_curse(text, written)):
+        fix = (
+            "\nCut the stock opener. New shape. Shorter. "
             "End every sentence with a period. Use a comma between clauses."
         )
-        written = _complete(key, model, retry) or written
+        if _missing_curse(text, written):
+            fix += " Put one sharp word in the sentence."
+        written = _complete(key, model, prompt + fix) or written
     return written
+
+
+def _missing_curse(seed: str, written: str) -> bool:
+    return swears(seed) and _CURSE.search(written) is None
 
 
 def _stock(text: str) -> bool:

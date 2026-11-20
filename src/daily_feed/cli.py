@@ -140,7 +140,7 @@ def _run(argv: list[str]) -> int:
 
     since = _aware(now) - timedelta(days=7)
     reading = {**state, "seen_ids": []} if repost else state
-    updates = collect(watchlist.items, fetched, reading, now, since=since)
+    updates = collect(watchlist.items, fetched, reading, now, since=since, force=repost)
     if not gate_due and not repost:
         updates = [update for update in updates if update.source == "twitch"]
     updates = dedupe([update for update in updates if worth_sending(update)])

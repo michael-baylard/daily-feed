@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from daily_feed.feeds import (
+    bears_story,
     espn_articles,
     espn_now_text,
     espn_search_hits,
@@ -198,3 +199,39 @@ def test_conduct_keeps_a_reported_penalty_and_drops_a_video() -> None:
     now = datetime(2026, 11, 19, 23, tzinfo=timezone.utc)
     stored = remember({}, [update], {}, now)
     assert update.url in stored["seen_ids"]
+
+
+def test_a_bears_tag_does_not_make_an_opponent_a_bear() -> None:
+    roster = {"caleb williams", "kyle monangai"}
+    simmons = {
+        "headline": "Bears' Jeffery Simmons says knee injury a non-issue, expects to play vs. Saints",
+        "categories": [
+            {"type": "team", "team": {"abbreviation": "CHI"}},
+            {"type": "athlete", "description": "Jeffery Simmons"},
+        ],
+    }
+    caleb = {
+        "headline": "Bears QB Caleb Williams has moved on from a 4-INT game",
+        "categories": [{"type": "athlete", "description": "Caleb Williams"}],
+    }
+    assert not bears_story(simmons, roster)
+    assert bears_story(caleb, roster)
+    articles = espn_articles(
+        {
+            "articles": [
+                {
+                    **simmons,
+                    "links": {"web": {"href": "https://www.espn.com/nfl/story/simmons"}},
+                    "published": "2026-11-19T12:00:00Z",
+                },
+                {
+                    **caleb,
+                    "links": {"web": {"href": "https://www.espn.com/nfl/story/caleb"}},
+                    "published": "2026-11-18T12:00:00Z",
+                },
+            ]
+        },
+        roster,
+    )
+    assert articles[0].get("focus", "") == ""
+    assert articles[1]["focus"] == "bears"

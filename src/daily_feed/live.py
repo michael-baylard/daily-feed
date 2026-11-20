@@ -16,13 +16,16 @@ from daily_feed.feeds import (
     is_conduct,
     og_image,
     rockstar_articles,
+    bears_from_search,
+    roster_names,
     twitch_stream,
 )
 from daily_feed.parallel import run_parallel
 
 _ROCKSTAR = "https://graph.rockstargames.com/"
-_NFL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=15"
-_BEARS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/chi/news?limit=15"
+_NFL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=40"
+_BEARS_SEARCH = "https://site.api.espn.com/apis/search/v2?limit=15&query=Chicago%20Bears"
+_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/chi/roster"
 _SEARCH = "https://site.api.espn.com/apis/search/v2?limit=8&query="
 _NOW = "https://now.core.api.espn.com/v1/sports/news/"
 _CONDUCT_QUERIES = ("racial slur", "homophobic", "anti-gay slur", "antisemitic")
@@ -52,20 +55,21 @@ def fetch_rockstar() -> list[dict]:
 
 
 def fetch_nfl() -> list[dict]:
-    """NFL headlines plus the Chicago Bears team feed.
+    """NFL headlines, with Chicago Bears stories marked.
 
-    nfl.com serves a shell, so this reads ESPN. Bears stories are marked
-    ``focus=bears`` so a routine league headline cannot crowd them out.
+    nfl.com serves a shell, so this reads ESPN. The Bears roster decides
+    whether a tagged player is actually on the team. An opponent mentioned
+    next to the Bears is not a Bears story.
     """
-    general_payload = _json(_NFL)
-    bears_payload = _json(_BEARS)
-    general = espn_articles(general_payload) if isinstance(general_payload, dict) else []
-    bears = espn_articles(bears_payload) if isinstance(bears_payload, dict) else []
-    for article in bears:
-        article["focus"] = "bears"
+    payload = _json(_NFL)
+    search = _json(_BEARS_SEARCH)
+    roster = _json(_ROSTER)
+    names = roster_names(roster) if isinstance(roster, dict) else set()
+    articles = espn_articles(payload, names) if isinstance(payload, dict) else []
+    extra = bears_from_search(search, names) if isinstance(search, dict) else []
     ordered: list[dict] = []
     seen: set[str] = set()
-    for article in [*bears, *general]:
+    for article in [*extra, *articles]:
         url = str(article.get("url") or "")
         if not url or url in seen:
             continue

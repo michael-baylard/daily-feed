@@ -53,16 +53,20 @@ def relevant(update: Update) -> bool:
         return True
     blob = f"{update.title}\n{update.url}\n" + " ".join(update.lines)
     folded = blob.casefold()
-    comic = any(word in folded for word in _COMIC)
-    if any(word in folded for word in _COLLEGE) and not comic:
+    comic = _has(folded, _COMIC)
+    if _has(folded, _COLLEGE) and not comic:
         return False
     if update.focus == "bears":
         return True
     if "preview?gameid" in folded or "/preview" in folded:
         return False
-    if any(word in folded for word in _ROUTINE):
+    if _has(folded, _ROUTINE):
         return False
     return comic
+
+
+def _has(text: str, words: tuple[str, ...]) -> bool:
+    return any(re.search(rf"\b{re.escape(word)}\b", text) for word in words)
 
 
 def dedupe(updates: list[Update]) -> list[Update]:

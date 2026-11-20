@@ -87,3 +87,27 @@ def test_collect_drops_routine_nfl_before_a_card(monkeypatch) -> None:
         "Bears' Williams throws four touchdowns",
         "Fiona the hippo visits the Bengals",
     ]
+
+
+def test_repost_opens_the_day_that_already_ran(monkeypatch) -> None:
+    monkeypatch.setattr("daily_feed.run.describe", lambda *args, **kwargs: ("A dry line.",))
+    item = WatchItem(kind=Kind.league, name="NFL", slug="nfl")
+    fetched = {
+        "nfl": {
+            "article_source": "nfl",
+            "articles": [
+                {
+                    "title": "Bears' Williams throws four touchdowns",
+                    "url": "https://www.espn.com/nfl/story/bears",
+                    "text": "Caleb Williams threw four scores.",
+                    "published_at": NOW,
+                    "focus": "bears",
+                }
+            ],
+        }
+    }
+    state = {"last_run_day": "2026-11-19", "seen_ids": ["https://www.espn.com/nfl/story/bears"]}
+    assert collect([item], fetched, state, NOW, since=NOW - timedelta(days=7)) == []
+    reading = {**state, "seen_ids": []}
+    again = collect([item], fetched, reading, NOW, since=NOW - timedelta(days=7), force=True)
+    assert [update.title for update in again] == ["Bears' Williams throws four touchdowns"]

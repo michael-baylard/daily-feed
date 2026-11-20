@@ -38,17 +38,19 @@ def collect(
     state: dict,
     now: datetime,
     since: datetime | None = None,
+    force: bool = False,
 ) -> list[Update]:
     """New updates for items on the list, oldest release first.
 
     Keys in ``fetched`` whose slug is not on the list are ignored.
     ``since`` keeps every unseen item in that window, up to eight a row.
+    ``force`` opens the daily gate when a repost has to ignore the stamped day.
     """
     hashes = state.get("hashes") or {}
     seen_ids = {str(gid) for gid in (state.get("seen_ids") or [])}
     twitch_titles = state.get("twitch_titles") or {}
     twitch_posts = state.get("twitch_posts") or {}
-    day_due = due(now, _state_day(state.get("last_run_day")))
+    day_due = force or due(now, _state_day(state.get("last_run_day")))
     updates: list[Update] = []
     for item in items:
         data = fetched.get(item.slug)
@@ -192,8 +194,14 @@ def _ones(
         if since is None:
             chosen = [article_update(item, articles, seen_ids, source)]
         else:
-            chosen = article_updates(item, articles, seen_ids, source, since)
+            chosen = article_updates(item, articles, seen_ids, source, since, limit=80)
         chosen = [update for update in chosen if update is not None and relevant(update)]
+        if since is not None and source == "nfl":
+            bears = [update for update in chosen if update.focus == "bears"]
+            rest = [update for update in chosen if update.focus != "bears"]
+            chosen = [*bears[-5:], *rest[-3:]]
+        elif since is not None:
+            chosen = chosen[-8:]
         return [posted for posted in (_daily(_short(update), day_due) for update in chosen) if posted is not None]
 
     if item.kind in _PAGE_KINDS:

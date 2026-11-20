@@ -149,6 +149,8 @@ def _lines(text: str) -> tuple[str, ...]:
         line = _plain(raw)
         if not line or find_pings(line):
             continue
+        if line[-1:] not in ".!?" and len(line) > 40:
+            continue
         lines.append(line)
         if len(lines) == 2:
             break

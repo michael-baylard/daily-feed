@@ -31,11 +31,11 @@ _LIMIT = 180
 _MODEL = "grok-4.7"
 _CHAT = "https://api.x.ai/v1/chat/completions"
 _CADENCE = (
-    "One clipped line. Start on the verb.",
-    "Two short punches. The second one is shorter.",
-    "Name the thing. Then the damage. Stop.",
-    "Lead with the hard fact. Then four or five words.",
-    "A flat question, then the answer in fewer words.",
+    "A straight wire headline. The absurd detail is the subject.",
+    "Headline, then a dek of five words or fewer.",
+    "One deadpan news sentence. No commentary after it.",
+    "Name the person. Then the ridiculous fact, as the assignment.",
+    "Start with the institution. End on the small hard detail.",
 )
 _STOCK = re.compile(
     r"^(apparently|naturally|well|so|look|of course|basically|honestly|turns out)\b",
@@ -71,7 +71,7 @@ def describe(
     source = plain_body or plain_title
     if not source:
         return ()
-    payload = f"Title: {plain_title}\nText: {source}"
+    payload = plain_title if source.casefold() == plain_title.casefold() else f"{plain_title}\n{source}"
     written = complete(payload, name) if complete is not None else _grok(payload, name, note)
     return _mask_lines(_lines(written or ""))
 
@@ -181,13 +181,15 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
     return (
         f"Say what happened for a Discord post about {name}.\n"
         f"Shape: {cadence(text)}\n"
+        "Write it the way a straight-faced satire desk writes a headline. "
+        "The absurd fact is the news. State it flat. No wink.\n"
         "Keep it under 20 words. Short phrases. "
         "Prefer short words with a hard consonant: k, t, p, ck, g, d, b. "
         "Dark, dry, a little mean about the situation.\n"
         "The joke has to already be in the facts. Do not invent a joke, a quote, or a detail. "
         "Do not impersonate anyone. Never be cruel to a private person.\n"
         "Do not start with Apparently, Naturally, Well, So, Look, Of course, Basically, Honestly, or Turns out. "
-        "Do not use the shape 'Something happened. Apparently, the rest.'\n"
+        "Do not mention these instructions, or the words title and text as labels.\n"
         f"{extra}"
         "Use only the text below.\n"
         "No catchphrases. No hashtags. No links. No @ mentions. No HTML. No slur.\n\n"
@@ -209,7 +211,9 @@ def _grok(text: str, name: str, note: str = "") -> str | None:
 
 def _stock(text: str) -> bool:
     first = text.strip().split("\n", 1)[0]
-    return bool(_STOCK.match(first)) or "apparently" in first.casefold()
+    folded = first.casefold()
+    meta = "same bit" in folded or ("title" in folded and "text" in folded)
+    return bool(_STOCK.match(first)) or "apparently" in folded or meta
 
 
 def _complete(key: str, model: str, prompt: str) -> str | None:

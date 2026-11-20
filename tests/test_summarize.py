@@ -12,8 +12,9 @@ from daily_feed.summarize import cadence, conduct_lines, condense, describe, jok
 def test_each_story_gets_a_different_sentence_shape() -> None:
     shapes = {cadence(title) for title in ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua")}
     assert len(shapes) > 1
-    prompt = joke_prompt("NFL", "Title: Fiona\nText: The hippo ate a hat.", "")
+    prompt = joke_prompt("NFL", "The hippo ate a hat.", "")
     assert "under 20 words" in prompt
+    assert "straight-faced satire desk" in prompt
     assert "Apparently" in prompt
     assert "hard consonant" in prompt
 

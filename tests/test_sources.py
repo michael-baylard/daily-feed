@@ -172,10 +172,12 @@ def test_twitch_returns_none_without_a_login() -> None:
     assert twitch_update(item, live, None) is None
 
 
-def test_twitch_skips_when_the_title_is_unchanged() -> None:
+def test_twitch_repeats_the_same_title() -> None:
     item = WatchItem(kind=Kind.person, name="Lirik", slug="lirik", twitch_login="Lirik")
     live = {"user_login": "lirik", "title": "ranked", "started_at": "2026-11-19T21:05:00Z"}
-    assert twitch_update(item, live, "ranked") is None
+    update = twitch_update(item, live, "ranked")
+    assert update is not None
+    assert update.lines == ("ranked",)
 
 
 def test_twitch_missing_started_at_does_not_raise() -> None:

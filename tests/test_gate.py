@@ -38,8 +38,8 @@ def test_streamer_skips_when_offline() -> None:
     )
 
 
-def test_streamer_skips_when_the_title_did_not_change() -> None:
-    assert not allow_post(
+def test_streamer_posts_the_same_title_when_the_hour_is_due() -> None:
+    assert allow_post(
         has_twitch=True,
         live=True,
         hour_due=True,
@@ -49,8 +49,8 @@ def test_streamer_skips_when_the_title_did_not_change() -> None:
     )
 
 
-def test_streamer_posts_a_new_title_inside_the_hour() -> None:
-    assert allow_post(
+def test_streamer_skips_inside_the_hour() -> None:
+    assert not allow_post(
         has_twitch=True,
         live=True,
         hour_due=False,
@@ -99,14 +99,20 @@ def test_collect_skips_an_offline_streamer() -> None:
     assert collect([item], fetched, {"twitch_posts": {}}, NOW) == []
 
 
-def test_collect_skips_when_the_stream_title_is_unchanged() -> None:
+def test_collect_posts_the_same_title_when_the_hour_is_due() -> None:
     item = WatchItem(kind=Kind.person, name="BurntPeanut", slug="burntpeanut", twitch_login="burntpeanut")
     fetched = {"burntpeanut": {"twitch": LIVE}}
-    state = {"twitch_titles": {"burntpeanut": "ranked"}, "twitch_posts": {}}
-    assert collect([item], fetched, state, NOW) == []
+    earlier = (NOW - timedelta(hours=2)).isoformat()
+    state = {
+        "twitch_titles": {"burntpeanut": "ranked"},
+        "twitch_posts": {"burntpeanut": earlier},
+    }
+    updates = collect([item], fetched, state, NOW)
+    assert len(updates) == 1
+    assert updates[0].title == "ranked"
 
 
-def test_collect_posts_when_the_stream_title_changes() -> None:
+def test_collect_skips_a_live_streamer_inside_the_hour() -> None:
     item = WatchItem(kind=Kind.person, name="BurntPeanut", slug="burntpeanut", twitch_login="burntpeanut")
     fetched = {"burntpeanut": {"twitch": {**LIVE, "title": "new game"}}}
     recent = (NOW - timedelta(minutes=10)).isoformat()
@@ -114,6 +120,4 @@ def test_collect_posts_when_the_stream_title_changes() -> None:
         "twitch_titles": {"burntpeanut": "ranked"},
         "twitch_posts": {"burntpeanut": recent},
     }
-    updates = collect([item], fetched, state, NOW)
-    assert len(updates) == 1
-    assert updates[0].title == "new game"
+    assert collect([item], fetched, state, NOW) == []

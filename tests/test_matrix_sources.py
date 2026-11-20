@@ -428,9 +428,11 @@ def test_matrix_twitch_login_mismatch_returns_none(item_login: str, live_login: 
     ],
     ids=["exact", "previous_padded", "live_padded"],
 )
-def test_matrix_twitch_same_title_returns_none(previous_title: str, live_title: str) -> None:
+def test_matrix_twitch_same_title_still_posts(previous_title: str, live_title: str) -> None:
     live = {"user_login": "matrix_login", "title": live_title, "started_at": "2026-11-19T10:00:00Z"}
-    assert twitch_update(_person(), live, previous_title) is None
+    update = twitch_update(_person(), live, previous_title)
+    assert update is not None
+    assert update.title == live_title.strip()
 
 
 @pytest.mark.parametrize(

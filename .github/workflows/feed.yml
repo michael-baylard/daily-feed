@@ -1,5 +1,7 @@
 name: feed
 
+# :05 past every hour. A live Twitch login posts once an hour.
+# News waits until 3pm America/Chicago, and only when the source changed.
 on:
   workflow_dispatch:
     inputs:
@@ -12,6 +14,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: feed-${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   post:

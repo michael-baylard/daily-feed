@@ -18,7 +18,7 @@ from daily_feed.order import sort_updates
 from daily_feed.prompt import build_prompt
 from daily_feed.safety import assert_no_pings
 from daily_feed.select import relevant
-from daily_feed.schedule import due, local_day
+from daily_feed.schedule import due, due_hourly, local_day
 from daily_feed.sources import (
     article_update,
     article_updates,
@@ -202,7 +202,7 @@ def _ones(
             chosen = [*bears[-5:], *rest[-3:]]
         elif since is not None:
             chosen = chosen[-8:]
-        return [posted for posted in (_daily(_short(update), day_due) for update in chosen) if posted is not None]
+        return [posted for posted in (_when_due(update, day_due) for update in chosen) if posted is not None]
 
     if item.kind in _PAGE_KINDS:
         update = _page(item, data, hashes, now, day_due)
@@ -213,7 +213,7 @@ def _ones(
             chosen = [steam_news_update(item, data["steam"], seen_ids)]
         else:
             chosen = steam_news_updates(item, data["steam"], seen_ids, since)
-        return [posted for posted in (_daily(_short(update), day_due) for update in chosen) if posted is not None]
+        return [posted for posted in (_when_due(update, day_due) for update in chosen) if posted is not None]
 
     episode = data.get("episode")
     if item.tvmaze_id is not None and isinstance(episode, dict):
@@ -286,6 +286,13 @@ def _short(update: Update | None) -> Update | None:
     return replace(update, lines=lines)
 
 
+def _when_due(update: Update | None, day_due: bool) -> Update | None:
+    """Write the card only inside the 3pm window. An hourly run skips the model."""
+    if _daily(update, day_due) is None:
+        return None
+    return _short(update)
+
+
 def _daily(update: Update | None, day_due: bool) -> Update | None:
     if update is None:
         return None
@@ -299,6 +306,18 @@ def _daily(update: Update | None, day_due: bool) -> Update | None:
     ):
         return None
     return update
+
+
+def _posted_at(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def _state_day(value: object) -> date | None:
@@ -318,21 +337,19 @@ def _twitch(
     twitch_posts: dict,
     now: datetime,
 ) -> Update | None:
-    """Post only when this login is live and the stream title changed."""
-    del twitch_posts, now
+    """Post when this login is live and an hour has passed since the last card."""
     if "twitch" not in data:
         return None
     live = data.get("twitch")
     is_live = isinstance(live, dict)
     previous = twitch_titles.get(item.slug)
     title = str(live.get("title") or "").strip() if is_live else ""
-    changed = bool(title) and title != str(previous or "").strip()
     if not allow_post(
         has_twitch=True,
         live=is_live,
-        hour_due=True,
+        hour_due=due_hourly(now, _posted_at(twitch_posts.get(item.slug))),
         day_due=False,
-        changed=changed,
+        changed=bool(title),
         text=title,
     ):
         return None

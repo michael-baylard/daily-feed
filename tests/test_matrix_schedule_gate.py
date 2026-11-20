@@ -104,14 +104,14 @@ def test_matrix_due_hourly_naive_datetimes_treated_as_utc() -> None:
     assert due_hourly(now, last_due) is True
 
 
-@pytest.mark.parametrize("hour_due", (True, False))
-def test_matrix_streamer_posts_live_and_changed_ignores_hour_due(hour_due: bool) -> None:
+@pytest.mark.parametrize("changed", (True, False))
+def test_matrix_streamer_posts_when_live_and_the_hour_is_due(changed: bool) -> None:
     assert allow_post(
         has_twitch=True,
         live=True,
-        hour_due=hour_due,
+        hour_due=True,
         day_due=False,
-        changed=True,
+        changed=changed,
         text="updated title",
     )
 
@@ -128,14 +128,14 @@ def test_matrix_streamer_skips_offline_even_when_hour_due(hour_due: bool) -> Non
     )
 
 
-@pytest.mark.parametrize("hour_due", (True, False))
-def test_matrix_streamer_skips_unchanged_title(hour_due: bool) -> None:
+@pytest.mark.parametrize("changed", (True, False))
+def test_matrix_streamer_skips_inside_the_hour(changed: bool) -> None:
     assert not allow_post(
         has_twitch=True,
         live=True,
-        hour_due=hour_due,
+        hour_due=False,
         day_due=False,
-        changed=False,
+        changed=changed,
         text="same title",
     )
 
@@ -204,13 +204,21 @@ def test_matrix_ping_in_text_forces_skip(text: str) -> None:
     )
 
 
-def test_matrix_twitch_routes_streamer_when_day_also_due_live_changed() -> None:
-    assert allow_post(
+def test_matrix_twitch_uses_the_hour_even_when_the_day_is_due() -> None:
+    assert not allow_post(
         has_twitch=True,
         live=True,
         hour_due=False,
         day_due=True,
         changed=True,
+        text="live now",
+    )
+    assert allow_post(
+        has_twitch=True,
+        live=True,
+        hour_due=True,
+        day_due=False,
+        changed=False,
         text="live now",
     )
 

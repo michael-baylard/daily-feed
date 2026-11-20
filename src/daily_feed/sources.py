@@ -168,10 +168,12 @@ def countdown_update(item: WatchItem, today: date) -> Update | None:
 def twitch_update(
     item: WatchItem, live: dict | None, previous_title: str | None
 ) -> Update | None:
-    """One line for this streamer only, while that login is live and the title is new.
+    """One line for this streamer while that login is live.
 
-    Offline, a different login, or the same title returns None.
+    Offline or a different login returns None. The same title still posts.
+    The hour gate lives in the run, not here.
     """
+    del previous_title
     if live is None or item.twitch_login is None:
         return None
     if not isinstance(live, dict):
@@ -180,7 +182,7 @@ def twitch_update(
     if user_login.casefold() != item.twitch_login.casefold():
         return None
     title = str(live.get("title") or "").strip()
-    if not title or title == str(previous_title or "").strip():
+    if not title:
         return None
     return Update(
         slug=item.slug,

@@ -1,4 +1,4 @@
-"""LangGraph gate. A streamer posts only while live and only when the title changed. Other posts wait for a real change. Nothing with a ping gets through."""
+"""LangGraph gate. A streamer posts once an hour, and only while live. Other posts wait for 3pm Chicago and a real change. Nothing with a ping gets through."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _classify(state: GateState) -> GateState:
 
 
 def _streamer(state: GateState) -> GateState:
-    post = bool(state.get("live")) and bool(state.get("changed"))
+    post = bool(state.get("live")) and bool(state.get("hour_due"))
     return {"decision": "post" if post else "skip"}
 
 

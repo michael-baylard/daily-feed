@@ -155,7 +155,7 @@ def _run(argv: list[str]) -> int:
         return 0
 
     prompts = page_prompts(watchlist.items, updates, fetched)
-    post_messages(messages, prompts)
+    post_messages(messages, prompts, [update.image for update in updates])
     save_state(state_path, remember(state, updates, fetched, now, stamp_day=day_due))
     save_watchlist(watchlist_path, watchlist)
     return 0

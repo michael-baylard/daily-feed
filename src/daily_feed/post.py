@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.request
 
-from daily_feed.safety import assert_no_pings
+from daily_feed.safety import assert_no_pings, find_pings
 
 WEBHOOK_ENV = "DISCORD_WEBHOOK_URL"
 
@@ -16,12 +16,15 @@ WEBHOOK_ENV = "DISCORD_WEBHOOK_URL"
 def message_body(content: str, image: str = "") -> dict:
     """One webhook JSON body. Discord will not ping anyone from this payload.
 
-    The article link unfurls the source picture. A second embed would show
-    the same story twice, so ``image`` is accepted and not attached.
+    A source image is attached when the URL is an https picture. The text
+    stays the message. The picture is that one embed image.
     """
-    del image
     assert_no_pings(content)
-    return {"content": content, "allowed_mentions": {"parse": []}}
+    body: dict = {"content": content, "allowed_mentions": {"parse": []}}
+    picture = image.strip()
+    if picture.startswith("https://") and not find_pings(picture):
+        body["embeds"] = [{"image": {"url": picture}}]
+    return body
 
 
 def send_messages(messages: list[str], images: list[str] | None = None) -> None:

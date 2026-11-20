@@ -19,6 +19,17 @@ jobs:
 
       - uses: astral-sh/setup-uv@v10.3.3
 
+      - name: Restore personas
+        env:
+          FEED_PERSONAS: ${{ secrets.FEED_PERSONAS }}
+        run: |
+          mkdir -p personas
+          if [ -z "$FEED_PERSONAS" ]; then
+            echo "Add the FEED_PERSONAS secret. It is not stored in the repo."
+            exit 1
+          fi
+          printf '%s' "$FEED_PERSONAS" | base64 -d | tar -xz -C personas
+
       - name: Install
         run: uv sync --frozen --extra dev
 

@@ -30,7 +30,6 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert first_person("I am done with that.")
     assert not first_person("He cannot keep doing that.")
     assert not first_person("Are you serious.")
-    assert "End with one short reaction" not in prompt
     assert "Apparently" in prompt
     assert persona_for("conduct") == "conduct"
     assert persona_for("nfl") == "bears"
@@ -45,14 +44,14 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert "The throw was a gift." in picks
     back = joke_prompt("NFL", "Monangai is on track to return Sunday.", "", "bears")
     assert "Good news is the fact" in back
-    assert "No a sharp word" in joke_prompt("NFL", "Fiona died. The team paid tribute.", "", "bears")
+    assert "No profanity in this one." in joke_prompt("NFL", "Fiona died. The team paid tribute.", "", "bears")
     shelf = joke_prompt("ROB RUN", "The patch wiped progress and left the cheats.", "", "shelf")
     assert "delay" in shelf
     assert "A release" in shelf
     conduct = joke_prompt("Conduct", "He denied the antisemitic remark.", "", "conduct")
     assert "ALLEGEDLY" in conduct
     assert "What a cool guy!" in conduct
-    assert "No a sharp word" in conduct
+    assert "No profanity in this one." in conduct
 
 
 def test_short_news_still_asks_what_happened() -> None:

@@ -26,6 +26,16 @@ jobs:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --frozen
+      - name: Restore personas
+        env:
+          FEED_PERSONAS: ${{ secrets.FEED_PERSONAS }}
+        run: |
+          mkdir -p personas
+          if [ -z "$FEED_PERSONAS" ]; then
+            echo "Add the FEED_PERSONAS secret. It is not stored in the repo."
+            exit 1
+          fi
+          printf '%s' "$FEED_PERSONAS" | base64 -d | tar -xz -C personas
       - name: Post the feed
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}

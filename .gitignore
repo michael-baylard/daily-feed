@@ -10,5 +10,6 @@ dist/
 *.egg-info/
 .env
 .env.local
+personas/*.yaml
 graphify-out/
 out/

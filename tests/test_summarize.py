@@ -15,7 +15,9 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert len(shapes) > 1
     prompt = joke_prompt("NFL", "The hippo ate a hat.", "", "bears")
     assert "Bears fan" in prompt or "Bears" in prompt
-    assert "one short reaction" in prompt
+    assert "bad news" in prompt
+    assert "Do not copy" in prompt
+    assert "End with one short reaction" not in prompt
     assert "Apparently" in prompt
     assert persona_for("conduct") == "conduct"
     assert persona_for("nfl") == "bears"
@@ -24,12 +26,16 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert any(sample)
     assert not all(sample)
     assert 0.6 <= (sum(sample) / len(sample)) <= 0.9
-    loud = next(f"story {n}" for n in range(40) if swears(f"story {n}"))
-    quiet = next(f"story {n}" for n in range(40) if not swears(f"story {n}"))
-    assert "one short reaction" in joke_prompt("NFL", "Caleb threw 4 picks.", "", "bears")
+    picks = joke_prompt("NFL", "Caleb threw 4 picks.", "", "bears")
+    assert "interceptions" in picks
+    assert "Come on." in picks
+    assert "The throw was a gift." in picks
+    back = joke_prompt("NFL", "Monangai is on track to return Sunday.", "", "bears")
+    assert "Good news is the fact" in back
     assert "No a sharp word" in joke_prompt("NFL", "Fiona died. The team paid tribute.", "", "bears")
-    assert "one short reaction" in joke_prompt("NFL", loud, "", "shelf")
-    assert "No a sharp word" in joke_prompt("NFL", quiet, "", "shelf")
+    shelf = joke_prompt("ROB RUN", "The patch wiped progress and left the cheats.", "", "shelf")
+    assert "delay" in shelf
+    assert "A release" in shelf
     conduct = joke_prompt("Conduct", "He denied the antisemitic remark.", "", "conduct")
     assert "ALLEGEDLY" in conduct
     assert "What a cool guy!" in conduct

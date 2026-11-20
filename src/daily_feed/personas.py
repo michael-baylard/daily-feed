@@ -31,10 +31,14 @@ def persona_for(source: str, kind: str = "", focus: str = "") -> str:
 
 
 def voice(persona_id: str) -> str:
-    """The instructions and the example, ready for the prompt."""
+    """The instructions, the mood list, and one example, ready for the prompt."""
     data = load_persona(persona_id)
-    text = str(data.get("voice") or "").strip()
+    parts = [str(data.get("voice") or "").strip()]
+    reactions = [str(item).strip() for item in (data.get("reactions") or []) if str(item).strip()]
+    if reactions:
+        lines = "\n".join(f"- {item}" for item in reactions)
+        parts.append(f"Mood samples. Do not copy one:\n{lines}")
     example = str(data.get("example") or "").strip()
     if example:
-        return f"{text}\nExample: {example}"
-    return text
+        parts.append(f"One way the fact can sit: {example}")
+    return "\n".join(part for part in parts if part)

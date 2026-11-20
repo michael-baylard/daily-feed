@@ -46,7 +46,6 @@ _STOCK = re.compile(
     r"^(apparently|naturally|well|so|look|of course|basically|honestly|turns out)\b",
     re.IGNORECASE,
 )
-_CURSE = re.compile(r"\b(?:nope|nope|nope)\w*\b", re.IGNORECASE)
 _GRIM = re.compile(r"\b(?:died|death|killed|tribute|passed away)\b", re.IGNORECASE)
 
 Complete = Callable[[str, str], str | None]
@@ -222,18 +221,17 @@ def joke_prompt(name: str, text: str, note: str = "", persona: str = "shelf") ->
     )
 
 
-def _wants_curse(text: str, persona: str) -> bool:
-    if persona == "conduct" or _GRIM.search(text):
-        return False
-    if persona == "bears":
-        return True
-    return swears(text)
+def _blocks_curse(text: str, persona: str) -> bool:
+    return persona == "conduct" or _GRIM.search(text) is not None
 
 
 def _profanity(text: str, persona: str) -> str:
-    if not _wants_curse(text, persona):
+    if _blocks_curse(text, persona):
         return "No profanity in this one."
-    return "End with one short reaction. Do not aim it at a person."
+    return (
+        "A curse only when the news is bad. Vary the wording. "
+        "Do not reuse a mood sample. Good news stops after the fact."
+    )
 
 
 def _grok(text: str, name: str, note: str = "", persona: str = "shelf") -> str | None:
@@ -243,16 +241,10 @@ def _grok(text: str, name: str, note: str = "", persona: str = "shelf") -> str |
     model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
     prompt = joke_prompt(name, text, note, persona)
     written = _complete(key, model, prompt)
-    if written and (_stock(written) or _missing_curse(text, written, persona)):
-        fix = "\nCut the stock opener. The fact, then the reaction."
-        if _missing_curse(text, written, persona):
-            fix += " End with one short reaction."
+    if written and _stock(written):
+        fix = "\nCut the stock opener. The fact, then a new reaction only when the news is bad."
         written = _complete(key, model, prompt + fix) or written
     return written
-
-
-def _missing_curse(seed: str, written: str, persona: str = "shelf") -> bool:
-    return _wants_curse(seed, persona) and _CURSE.search(written) is None
 
 
 def _stock(text: str) -> bool:

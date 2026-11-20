@@ -7,7 +7,16 @@ from datetime import datetime, timezone
 from daily_feed.models import Kind, WatchItem
 from daily_feed.run import collect
 from daily_feed.personas import persona_for
-from daily_feed.summarize import cadence, conduct_lines, condense, describe, joke_prompt, mask_slur, swears
+from daily_feed.summarize import (
+    cadence,
+    conduct_lines,
+    condense,
+    describe,
+    first_person,
+    joke_prompt,
+    mask_slur,
+    swears,
+)
 
 
 def test_each_story_gets_a_different_sentence_shape() -> None:
@@ -17,6 +26,10 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert "Bears fan" in prompt or "Bears" in prompt
     assert "bad news" in prompt
     assert "Do not copy" in prompt
+    assert "No I, me, my, we, our, or us" in prompt
+    assert first_person("I am done with that.")
+    assert not first_person("He cannot keep doing that.")
+    assert not first_person("Are you serious.")
     assert "End with one short reaction" not in prompt
     assert "Apparently" in prompt
     assert persona_for("conduct") == "conduct"

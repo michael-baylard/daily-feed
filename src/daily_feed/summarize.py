@@ -47,6 +47,7 @@ _STOCK = re.compile(
     re.IGNORECASE,
 )
 _GRIM = re.compile(r"\b(?:died|death|killed|tribute|passed away)\b", re.IGNORECASE)
+_FIRST = re.compile(r"\b(?:I|I'm|I'd|I'll|I've|me|Me|my|My|we|We|we're|We've|we've|our|Our|ours|us)\b")
 
 Complete = Callable[[str, str], str | None]
 
@@ -209,6 +210,7 @@ def joke_prompt(name: str, text: str, note: str = "", persona: str = "shelf") ->
         f"Shape: {cadence(text)}\n"
         "Two sentences at most. The fact, then the reaction. "
         "End the fact with a period.\n"
+        "Second person or third person. No I, me, my, we, our, or us.\n"
         f"{_profanity(text, persona)}\n"
         "The reaction has to already be in the facts. Do not invent a joke, a quote, or a detail. "
         "Do not impersonate the person in the story. Never be cruel to a private person.\n"
@@ -241,10 +243,22 @@ def _grok(text: str, name: str, note: str = "", persona: str = "shelf") -> str |
     model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
     prompt = joke_prompt(name, text, note, persona)
     written = _complete(key, model, prompt)
-    if written and _stock(written):
-        fix = "\nCut the stock opener. The fact, then a new reaction only when the news is bad."
-        written = _complete(key, model, prompt + fix) or written
-    return written
+    if written and (_stock(written) or first_person(written)):
+        fix = (
+            "\nCut the stock opener. Second person or third person. "
+            "No I, me, my, we, our, or us. A new reaction only when the news is bad."
+        )
+        retry = _complete(key, model, prompt + fix) or ""
+        if _lines(retry) and not first_person(retry):
+            written = retry
+        elif first_person(written):
+            written = ""
+    return written or None
+
+
+def first_person(text: str) -> bool:
+    """True when the card talks as I or we."""
+    return _FIRST.search(text) is not None
 
 
 def _stock(text: str) -> bool:

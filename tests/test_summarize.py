@@ -17,6 +17,8 @@ def test_each_story_gets_a_different_sentence_shape() -> None:
     assert "straight-faced satire desk" in prompt
     assert "Apparently" in prompt
     assert "hard consonant" in prompt
+    assert "End every sentence with a period" in prompt
+    assert "comma" in prompt
     seeds = ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua", "GTA VI")
     assert any(swears(seed) for seed in seeds)
     assert any(not swears(seed) for seed in seeds)
@@ -79,6 +81,17 @@ def test_conduct_summary_keeps_the_blanked_quote() -> None:
     assert "faggot" not in " ".join(lines).casefold()
 
 
+def test_a_short_fragment_gets_a_period_and_a_cut_line_is_dropped() -> None:
+    def complete(text: str, name: str) -> str:
+        return (
+            "Hippo dead after a hat in the pen\n"
+            "ROB RUN rolled out an update to improve the city servers tonight"
+        )
+
+    lines = describe("Fiona", "The hippo ate a hat that got into the pen.", "NFL", complete=complete)
+    assert lines == ("Hippo dead after a hat in the pen.",)
+
+
 def test_short_text_stays() -> None:
     assert condense("Patch is live.", "ROB RUN") == ("Patch is live.",)
 
@@ -95,7 +108,7 @@ def test_model_output_drops_pings_and_keeps_two_lines() -> None:
         return "@everyone stay\nSecond line\nThird line"
 
     lines = condense("x" * 220 + " backup", "NFL", complete=complete)
-    assert lines == ("stay", "Second line")
+    assert lines == ("stay.", "Second line.")
 
 
 def test_collect_holds_a_long_steam_body_until_the_model(monkeypatch) -> None:

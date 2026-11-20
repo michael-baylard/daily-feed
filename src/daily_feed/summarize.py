@@ -31,11 +31,15 @@ _LIMIT = 180
 _MODEL = "grok-4.7"
 _CHAT = "https://api.x.ai/v1/chat/completions"
 _CADENCE = (
-    "A straight wire headline. The absurd detail is the subject.",
-    "Headline, then a dek of five words or fewer.",
+    "One sentence. The absurd detail is the subject.",
+    "Two short sentences. The second is five words or fewer.",
     "One deadpan news sentence. No commentary after it.",
-    "Name the person. Then the ridiculous fact, as the assignment.",
-    "Start with the institution. End on the small hard detail.",
+    "Name the person, then the ridiculous fact.",
+    "Start with the institution and end on the small hard detail.",
+)
+_DANGLING = re.compile(
+    r"(?:^|\s)(?:a|an|the|to|of|for|and|or|but|with|in|on|at|from|by|as|into|over|after|before)$",
+    re.IGNORECASE,
 )
 _STOCK = re.compile(
     r"^(apparently|naturally|well|so|look|of course|basically|honestly|turns out)\b",
@@ -161,12 +165,22 @@ def _lines(text: str) -> tuple[str, ...]:
         line = _plain(raw)
         if not line or find_pings(line):
             continue
-        if line[-1:] not in ".!?" and len(line) > 40:
+        finished = _finish(line)
+        if finished is None:
             continue
-        lines.append(line)
+        lines.append(finished)
         if len(lines) == 2:
             break
     return tuple(lines)
+
+
+def _finish(line: str) -> str | None:
+    """Close a finished short line. A cut-off line is dropped."""
+    if line[-1:] in ".!?":
+        return line
+    if len(line) > 40 or _DANGLING.search(line):
+        return None
+    return f"{line}."
 
 
 def _seed(text: str) -> int:
@@ -191,7 +205,9 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
         f"Shape: {cadence(text)}\n"
         "Write it the way a straight-faced satire desk writes a headline. "
         "The absurd fact is the news. State it flat. No wink.\n"
-        "Keep it under 20 words. Short phrases. "
+        "Keep it under 20 words. "
+        "Write complete sentences. Use a comma between clauses. "
+        "End every sentence with a period. "
         "Prefer short words with a hard consonant: k, t, p, ck, g, d, b. "
         "Dark, dry, a little mean about the situation.\n"
         f"{_profanity(text)}\n"
@@ -222,7 +238,11 @@ def _grok(text: str, name: str, note: str = "") -> str | None:
     model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
     written = _complete(key, model, joke_prompt(name, text, note))
     if written and _stock(written):
-        retry = joke_prompt(name, text, note) + "\nCut the stock opener. New shape. Shorter."
+        retry = (
+            joke_prompt(name, text, note)
+            + "\nCut the stock opener. New shape. Shorter. "
+            "End every sentence with a period. Use a comma between clauses."
+        )
         written = _complete(key, model, retry) or written
     return written
 
@@ -231,7 +251,8 @@ def _stock(text: str) -> bool:
     first = text.strip().split("\n", 1)[0]
     folded = first.casefold()
     meta = "same bit" in folded or ("title" in folded and "text" in folded)
-    return bool(_STOCK.match(first)) or "apparently" in folded or meta
+    bare = first[-1:] not in ".!?"
+    return bool(_STOCK.match(first)) or "apparently" in folded or meta or bare
 
 
 def _complete(key: str, model: str, prompt: str) -> str | None:

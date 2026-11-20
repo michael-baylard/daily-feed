@@ -139,7 +139,7 @@ def _run(argv: list[str]) -> int:
         fetched = _fetch_live(watchlist.items)
 
     since = _aware(now) - timedelta(days=7)
-    reading = {**state, "seen_ids": []} if repost else state
+    reading = {**state, "seen_ids": [], "seen_titles": []} if repost else state
     updates = collect(watchlist.items, fetched, reading, now, since=since, force=repost)
     if not gate_due and not repost:
         updates = [update for update in updates if update.source == "twitch"]

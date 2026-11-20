@@ -265,6 +265,7 @@ def test_load_state_missing_file_is_empty(tmp_path: Path) -> None:
         "last_run_day": None,
         "hashes": {},
         "seen_ids": [],
+        "seen_titles": [],
         "twitch_titles": {},
         "twitch_posts": {},
     }
@@ -278,6 +279,7 @@ def test_state_round_trip(tmp_path: Path) -> None:
         "last_run_day": "2026-11-19",
         "hashes": {"dc_comics": "abc"},
         "seen_ids": ["9", "2"],
+        "seen_titles": [],
         "twitch_titles": {"lirik": "ranked"},
         "twitch_posts": {"lirik": "2026-11-19T21:00:00+00:00"},
     }

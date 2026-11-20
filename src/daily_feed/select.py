@@ -119,10 +119,41 @@ def _tokens(title: str) -> set[str]:
     return {word for word in words if word not in _STOP and len(word) > 2}
 
 
+_EVENT = {
+    "suspension",
+    "suspended",
+    "injury",
+    "injured",
+    "fired",
+    "apology",
+    "apologized",
+    "trade",
+    "traded",
+    "signed",
+    "arrest",
+    "arrested",
+    "ban",
+    "banned",
+    "fined",
+    "interception",
+    "interceptions",
+    "fumble",
+    "fumbles",
+}
+
+
+def same_story(left: str, right: str) -> bool:
+    """True when two headlines are the same story in different clothes."""
+    return _same(_tokens(left), _tokens(right))
+
+
 def _same(left: set[str], right: set[str]) -> bool:
     if not left or not right:
         return False
     shared = left & right
     if len(shared) < 2:
         return False
-    return len(shared) / min(len(left), len(right)) >= 0.6
+    ratio = len(shared) / min(len(left), len(right))
+    if ratio >= 0.6:
+        return True
+    return ratio >= 0.5 and bool(shared & _EVENT) and any(len(token) >= 5 for token in shared)

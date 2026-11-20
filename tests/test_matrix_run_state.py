@@ -352,6 +352,7 @@ def test_matrix_save_state_creates_parents_and_round_trips(tmp_path) -> None:
         "last_run_day": "2026-11-19",
         "hashes": {"a": "1", "b": "2"},
         "seen_ids": ["10", "20"],
+        "seen_titles": [],
         "twitch_titles": {"s1": "title"},
         "twitch_posts": {"s1": "2026-11-19T21:00:00+00:00"},
     }

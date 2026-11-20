@@ -64,6 +64,44 @@ def test_bears_stay_and_a_highlights_package_goes() -> None:
     assert not relevant(college)
 
 
+def test_dedupe_drops_a_second_writeup_of_one_suspension() -> None:
+    main = _nfl(
+        title="Rams WR Puka Nacua to serve 3-game suspension while on IR",
+        url="https://www.espn.com/nfl/story/_/id/50533560/rams-wr-puka-nacua-serve-3-game-suspension-ir",
+    )
+    follow = _nfl(
+        title="Yates on Nacua's suspension timing",
+        url="https://www.espn.com/nfl/story/yates",
+    )
+    kept = dedupe([main, follow])
+    assert len(kept) == 1
+
+
+def test_a_new_link_to_a_remembered_suspension_is_not_a_new_story(monkeypatch) -> None:
+    monkeypatch.setattr("daily_feed.run.describe", lambda *args, **kwargs: ("Still suspended.",))
+    item = WatchItem(kind=Kind.league, name="NFL", slug="nfl")
+    fetched = {
+        "nfl": {
+            "article_source": "nfl",
+            "articles": [
+                {
+                    "title": "Yates on Nacua's suspension timing",
+                    "url": "https://www.espn.com/nfl/story/yates",
+                    "text": "The suspension timing raised questions.",
+                    "published_at": NOW,
+                    "focus": "bears",
+                }
+            ],
+        }
+    }
+    state = {
+        "seen_ids": [
+            "https://www.espn.com/nfl/story/_/id/50533560/rams-wr-puka-nacua-serve-3-game-suspension-ir"
+        ]
+    }
+    assert collect([item], fetched, state, NOW, since=NOW - timedelta(days=7)) == []
+
+
 def test_dedupe_drops_the_same_game_twice() -> None:
     preview = _nfl(title="Colts vs Texans preview", url="http://www.espn.com/nfl/preview?gameId=1")
     plays = _nfl(

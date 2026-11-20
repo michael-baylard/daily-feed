@@ -18,7 +18,7 @@ from daily_feed.order import sort_updates
 from daily_feed.personas import persona_for
 from daily_feed.prompt import build_prompt
 from daily_feed.safety import assert_no_pings
-from daily_feed.select import relevant
+from daily_feed.select import relevant, same_story
 from daily_feed.schedule import due, due_hourly, local_day
 from daily_feed.sources import (
     article_update,
@@ -31,6 +31,23 @@ from daily_feed.sources import (
     twitch_update,
 )
 from daily_feed.summarize import conduct_lines, describe, mask_slur
+
+
+def _remembered_titles(state: dict, seen_ids: set[str]) -> list[str]:
+    """Headlines already told, plus the slug of a remembered article URL."""
+    titles = [str(title) for title in (state.get("seen_titles") or []) if str(title).strip()]
+    for gid in seen_ids:
+        text = str(gid).strip()
+        if not text.startswith("http"):
+            continue
+        slug = text.rstrip("/").rsplit("/", 1)[-1].replace("-", " ")
+        if slug:
+            titles.append(slug)
+    return titles
+
+
+def _already_told(title: str, seen_titles: list[str]) -> bool:
+    return any(same_story(title, previous) for previous in seen_titles)
 
 
 def collect(
@@ -49,6 +66,7 @@ def collect(
     """
     hashes = state.get("hashes") or {}
     seen_ids = {str(gid) for gid in (state.get("seen_ids") or [])}
+    seen_titles = _remembered_titles(state, seen_ids)
     twitch_titles = state.get("twitch_titles") or {}
     twitch_posts = state.get("twitch_posts") or {}
     day_due = force or due(now, _state_day(state.get("last_run_day")))
@@ -58,7 +76,18 @@ def collect(
         if not isinstance(data, dict):
             data = {}
         updates.extend(
-            _ones(item, data, hashes, seen_ids, twitch_titles, twitch_posts, now, day_due, since)
+            _ones(
+                item,
+                data,
+                hashes,
+                seen_ids,
+                twitch_titles,
+                twitch_posts,
+                now,
+                day_due,
+                since,
+                seen_titles,
+            )
         )
     return sort_updates(updates)
 
@@ -122,10 +151,12 @@ def remember(
         "last_run_day": local_day(now).isoformat() if stamp_day else state.get("last_run_day"),
         "hashes": dict(state.get("hashes") or {}),
         "seen_ids": [str(gid) for gid in (state.get("seen_ids") or [])],
+        "seen_titles": [str(title) for title in (state.get("seen_titles") or []) if str(title).strip()],
         "twitch_titles": dict(state.get("twitch_titles") or {}),
         "twitch_posts": dict(state.get("twitch_posts") or {}),
     }
     seen = set(stored["seen_ids"])
+    remembered = set(stored["seen_titles"])
     for update in updates:
         data = fetched.get(update.slug) if isinstance(fetched.get(update.slug), dict) else {}
         if update.source == "page":
@@ -136,6 +167,8 @@ def remember(
             stored["twitch_posts"][update.slug] = _as_utc(now).isoformat()
         elif update.source in {"newswire", "nfl", "conduct"} and update.url:
             seen.add(update.url)
+            if update.title.strip():
+                remembered.add(update.title.strip())
         elif update.source == "steam" and isinstance(data, dict):
             posted = int(update.published_at.timestamp())
             payload = data.get("steam") if isinstance(data.get("steam"), dict) else {}
@@ -153,7 +186,10 @@ def remember(
                     stamp = 0
                 if stamp <= posted or news.get("url") == update.url:
                     seen.add(gid)
+            if update.title.strip():
+                remembered.add(update.title.strip())
     stored["seen_ids"] = sorted(seen)
+    stored["seen_titles"] = sorted(remembered)
     return stored
 
 
@@ -178,6 +214,7 @@ def _ones(
     now: datetime,
     day_due: bool,
     since: datetime | None,
+    seen_titles: list[str],
 ) -> list[Update]:
     if item.twitch_login:
         update = _twitch(item, data, twitch_titles, twitch_posts, now)
@@ -197,6 +234,7 @@ def _ones(
         else:
             chosen = article_updates(item, articles, seen_ids, source, since, limit=80)
         chosen = [update for update in chosen if update is not None and relevant(update)]
+        chosen = [update for update in chosen if not _already_told(update.title, seen_titles)]
         if since is not None and source == "nfl":
             bears = [update for update in chosen if update.focus == "bears"]
             rest = [update for update in chosen if update.focus != "bears"]
@@ -214,6 +252,7 @@ def _ones(
             chosen = [steam_news_update(item, data["steam"], seen_ids)]
         else:
             chosen = steam_news_updates(item, data["steam"], seen_ids, since)
+        chosen = [update for update in chosen if update is not None and not _already_told(update.title, seen_titles)]
         return [posted for posted in (_when_due(update, day_due) for update in chosen) if posted is not None]
 
     episode = data.get("episode")

@@ -553,7 +553,7 @@ def test_no_post_prints_the_model_line_and_does_not_send(tmp_path: Path, monkeyp
     )
     monkeypatch.setattr(
         "daily_feed.run.describe",
-        lambda title, body, name: ("The patch adds a profanity filter.",),
+            lambda title, body, name, **kwargs: ("The patch adds a profanity filter.",),
     )
     code = main(
         [

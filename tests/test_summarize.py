@@ -6,27 +6,34 @@ from datetime import datetime, timezone
 
 from daily_feed.models import Kind, WatchItem
 from daily_feed.run import collect
+from daily_feed.personas import persona_for
 from daily_feed.summarize import cadence, conduct_lines, condense, describe, joke_prompt, mask_slur, swears
 
 
 def test_each_story_gets_a_different_sentence_shape() -> None:
     shapes = {cadence(title) for title in ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua")}
     assert len(shapes) > 1
-    prompt = joke_prompt("NFL", "The hippo ate a hat.", "")
-    assert "under 20 words" in prompt
-    assert "straight-faced satire desk" in prompt
+    prompt = joke_prompt("NFL", "The hippo ate a hat.", "", "bears")
+    assert "Bears fan" in prompt or "Bears" in prompt
+    assert "one short reaction" in prompt
     assert "Apparently" in prompt
-    assert "hard consonant" in prompt
-    assert "End every sentence with a period" in prompt
-    assert "comma" in prompt
+    assert persona_for("conduct") == "conduct"
+    assert persona_for("nfl") == "bears"
+    assert persona_for("steam") == "shelf"
     sample = [swears(f"story {n}") for n in range(40)]
     assert any(sample)
     assert not all(sample)
     assert 0.6 <= (sum(sample) / len(sample)) <= 0.9
     loud = next(f"story {n}" for n in range(40) if swears(f"story {n}"))
     quiet = next(f"story {n}" for n in range(40) if not swears(f"story {n}"))
-    assert "a sharp word" in joke_prompt("NFL", loud, "")
-    assert "No profanity" in joke_prompt("NFL", quiet, "")
+    assert "one short reaction" in joke_prompt("NFL", "Caleb threw 4 picks.", "", "bears")
+    assert "No a sharp word" in joke_prompt("NFL", "Fiona died. The team paid tribute.", "", "bears")
+    assert "one short reaction" in joke_prompt("NFL", loud, "", "shelf")
+    assert "No a sharp word" in joke_prompt("NFL", quiet, "", "shelf")
+    conduct = joke_prompt("Conduct", "He denied the antisemitic remark.", "", "conduct")
+    assert "ALLEGEDLY" in conduct
+    assert "What a cool guy!" in conduct
+    assert "No a sharp word" in conduct
 
 
 def test_short_news_still_asks_what_happened() -> None:
@@ -142,7 +149,7 @@ def test_collect_holds_a_long_steam_body_until_the_model(monkeypatch) -> None:
 
     monkeypatch.setattr(
         "daily_feed.run.describe",
-        lambda title, body, name: ("The patch adds a profanity filter.",),
+            lambda title, body, name, **kwargs: ("The patch adds a profanity filter.",),
     )
     posted = collect([item], fetched, {}, now)
     assert posted[0].lines == ("The patch adds a profanity filter.",)

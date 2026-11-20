@@ -13,6 +13,7 @@ import re
 import urllib.request
 from collections.abc import Callable
 
+from daily_feed.personas import voice
 from daily_feed.safety import find_pings, strip_pings
 
 _TAGS = re.compile(r"<[^>]+>")
@@ -46,6 +47,7 @@ _STOCK = re.compile(
     re.IGNORECASE,
 )
 _CURSE = re.compile(r"\b(?:nope|nope|nope)\w*\b", re.IGNORECASE)
+_GRIM = re.compile(r"\b(?:died|death|killed|tribute|passed away)\b", re.IGNORECASE)
 
 Complete = Callable[[str, str], str | None]
 
@@ -69,15 +71,16 @@ def describe(
     name: str,
     complete: Complete | None = None,
     note: str = "",
+    persona: str = "shelf",
 ) -> tuple[str, ...]:
-    """What happened, in one or two sentences. Empty when the model does not answer."""
+    """What happened, in the persona's voice. Empty when the model does not answer."""
     plain_title = mask_slur(_plain(title))
     plain_body = mask_slur(_plain(body))
     source = plain_body or plain_title
     if not source:
         return ()
     payload = plain_title if source.casefold() == plain_title.casefold() else f"{plain_title}\n{source}"
-    written = complete(payload, name) if complete is not None else _grok(payload, name, note)
+    written = complete(payload, name) if complete is not None else _grok(payload, name, note, persona)
     return _mask_lines(_lines(written or ""))
 
 
@@ -198,22 +201,18 @@ def swears(seed: str) -> bool:
     return (_seed(seed) // len(_CADENCE)) % 4 != 0
 
 
-def joke_prompt(name: str, text: str, note: str = "") -> str:
-    """Instructions for one card. The shape changes with the story."""
+def joke_prompt(name: str, text: str, note: str = "", persona: str = "shelf") -> str:
+    """Instructions for one card, in that persona's voice."""
     extra = f"{note.strip()}\n" if note.strip() else ""
     return (
         f"Say what happened for a Discord post about {name}.\n"
+        f"{voice(persona)}\n"
         f"Shape: {cadence(text)}\n"
-        "Write it the way a straight-faced satire desk writes a headline. "
-        "The absurd fact is the news. State it flat. No wink.\n"
-        "Keep it under 20 words. "
-        "Write complete sentences. Use a comma between clauses. "
-        "End every sentence with a period. "
-        "Prefer short words with a hard consonant: k, t, p, ck, g, d, b. "
-        "Dark, dry, a little mean about the situation.\n"
-        f"{_profanity(text)}\n"
-        "The joke has to already be in the facts. Do not invent a joke, a quote, or a detail. "
-        "Do not impersonate anyone. Never be cruel to a private person.\n"
+        "Two sentences at most. The fact, then the reaction. "
+        "End the fact with a period.\n"
+        f"{_profanity(text, persona)}\n"
+        "The reaction has to already be in the facts. Do not invent a joke, a quote, or a detail. "
+        "Do not impersonate the person in the story. Never be cruel to a private person.\n"
         "Do not start with Apparently, Naturally, Well, So, Look, Of course, Basically, Honestly, or Turns out. "
         "Do not mention these instructions, or the words title and text as labels.\n"
         f"{extra}"
@@ -223,35 +222,37 @@ def joke_prompt(name: str, text: str, note: str = "") -> str:
     )
 
 
-def _profanity(text: str) -> str:
-    if swears(text):
-        return (
-            "The sentence must contain exactly one sharp word. "
-            "The curse is about the situation. Do not aim it at a person. Do not use a slur."
-        )
-    return "No profanity in this one."
+def _wants_curse(text: str, persona: str) -> bool:
+    if persona == "conduct" or _GRIM.search(text):
+        return False
+    if persona == "bears":
+        return True
+    return swears(text)
 
 
-def _grok(text: str, name: str, note: str = "") -> str | None:
+def _profanity(text: str, persona: str) -> str:
+    if not _wants_curse(text, persona):
+        return "No profanity in this one."
+    return "End with one short reaction. Do not aim it at a person."
+
+
+def _grok(text: str, name: str, note: str = "", persona: str = "shelf") -> str | None:
     key = os.environ.get("XAI_API_KEY", "").strip()
     if not key:
         return None
     model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
-    prompt = joke_prompt(name, text, note)
+    prompt = joke_prompt(name, text, note, persona)
     written = _complete(key, model, prompt)
-    if written and (_stock(written) or _missing_curse(text, written)):
-        fix = (
-            "\nCut the stock opener. New shape. Shorter. "
-            "End every sentence with a period. Use a comma between clauses."
-        )
-        if _missing_curse(text, written):
-            fix += " Put one sharp word in the sentence."
+    if written and (_stock(written) or _missing_curse(text, written, persona)):
+        fix = "\nCut the stock opener. The fact, then the reaction."
+        if _missing_curse(text, written, persona):
+            fix += " End with one short reaction."
         written = _complete(key, model, prompt + fix) or written
     return written
 
 
-def _missing_curse(seed: str, written: str) -> bool:
-    return swears(seed) and _CURSE.search(written) is None
+def _missing_curse(seed: str, written: str, persona: str = "shelf") -> bool:
+    return _wants_curse(seed, persona) and _CURSE.search(written) is None
 
 
 def _stock(text: str) -> bool:

@@ -15,6 +15,7 @@ from daily_feed.gate import allow_post
 from daily_feed.hashing import content_hash
 from daily_feed.models import Kind, Update, WatchItem
 from daily_feed.order import sort_updates
+from daily_feed.personas import persona_for
 from daily_feed.prompt import build_prompt
 from daily_feed.safety import assert_no_pings
 from daily_feed.select import relevant
@@ -274,11 +275,8 @@ def _short(update: Update | None) -> Update | None:
             "Do not fill the asterisks in. If the person denied it, say so."
         )
     raw = "\n".join(update.lines)
-    lines = (
-        describe(update.title, raw, update.name, note=note)
-        if note
-        else describe(update.title, raw, update.name)
-    )
+    persona = persona_for(update.source, update.kind.value, update.focus)
+    lines = describe(update.title, raw, update.name, note=note, persona=persona)
     if update.source == "conduct":
         lines = conduct_lines(raw, lines)
     elif not lines and len(raw) <= 180 and raw.casefold() != update.title.casefold():

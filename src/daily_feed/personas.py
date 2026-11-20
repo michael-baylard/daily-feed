@@ -7,16 +7,27 @@ from pathlib import Path
 
 import yaml
 
-_DIR = Path(__file__).resolve().parents[2] / "personas"
 _SPORTS = {"league", "athlete", "match"}
+
+
+def _persona_dir() -> Path:
+    """The voice files. Actions restores them into the working directory."""
+    candidates = (
+        Path.cwd() / "personas",
+        Path(__file__).resolve().parents[2] / "personas",
+    )
+    for path in candidates:
+        if (path / "bears.yaml").is_file() or (path / "shelf.yaml").is_file():
+            return path
+    return candidates[0]
 
 
 @cache
 def load_persona(persona_id: str) -> dict:
     """The yaml for this voice. An unknown id falls back to the shelf."""
-    path = _DIR / f"{persona_id}.yaml"
+    path = _persona_dir() / f"{persona_id}.yaml"
     if not path.is_file():
-        path = _DIR / "shelf.yaml"
+        path = _persona_dir() / "shelf.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     return data if isinstance(data, dict) else {}
 

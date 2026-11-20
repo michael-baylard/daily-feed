@@ -212,7 +212,9 @@ def joke_prompt(name: str, text: str, note: str = "", persona: str = "shelf") ->
         "End the fact with a period.\n"
         "Second person or third person. No I, me, my, we, our, or us.\n"
         f"{_profanity(text, persona)}\n"
-        "The reaction has to already be in the facts. Do not invent a joke, a quote, or a detail. "
+        "Do not invent a stat, a quote, a job, or a place. "
+        "On bad news, add one new short reaction after the fact. That reaction is not a new fact. "
+        "On good news, stop after the fact. "
         "Do not impersonate the person in the story. Never be cruel to a private person.\n"
         "Do not start with Apparently, Naturally, Well, So, Look, Of course, Basically, Honestly, or Turns out. "
         "Do not mention these instructions, or the words title and text as labels.\n"
@@ -231,8 +233,9 @@ def _profanity(text: str, persona: str) -> str:
     if _blocks_curse(text, persona):
         return "No profanity in this one."
     return (
-        "A curse only when the news is bad. Vary the wording. "
-        "Do not reuse a mood sample. Good news stops after the fact."
+        "Interceptions, fumbles, a loss, an injury, a player ruled out, a missed kick, or a dumb penalty "
+        "get one new short curse after the fact. Do not copy a mood sample. "
+        "Any other story stops after the fact."
     )
 
 

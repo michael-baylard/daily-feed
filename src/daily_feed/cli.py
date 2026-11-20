@@ -45,7 +45,7 @@ def load_local_env(directory: Path, environ: dict[str, str] | None = None) -> No
     """Fill missing keys from ``.env`` then ``.env.local``.
 
     A key already in the environment stays. GitHub Actions injects
-    ``GEMINI_API_KEY`` that way, and a local file does not replace it.
+    ``XAI_API_KEY`` that way, and a local file does not replace it.
     """
     target = os.environ if environ is None else environ
     found: dict[str, str] = {}

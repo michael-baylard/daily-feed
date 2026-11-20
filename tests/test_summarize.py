@@ -6,7 +6,16 @@ from datetime import datetime, timezone
 
 from daily_feed.models import Kind, WatchItem
 from daily_feed.run import collect
-from daily_feed.summarize import conduct_lines, condense, describe, mask_slur
+from daily_feed.summarize import cadence, conduct_lines, condense, describe, joke_prompt, mask_slur
+
+
+def test_each_story_gets_a_different_sentence_shape() -> None:
+    shapes = {cadence(title) for title in ("Fiona the hippo", "Caleb Williams", "Kortz Center", "Patch Notes", "Puka Nacua")}
+    assert len(shapes) > 1
+    prompt = joke_prompt("NFL", "Title: Fiona\nText: The hippo ate a hat.", "")
+    assert "under 20 words" in prompt
+    assert "Apparently" in prompt
+    assert "hard consonant" in prompt
 
 
 def test_short_news_still_asks_what_happened() -> None:

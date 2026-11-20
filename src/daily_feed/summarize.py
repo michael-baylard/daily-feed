@@ -30,6 +30,17 @@ _SLUR = re.compile(
 _LIMIT = 180
 _MODEL = "grok-4.7"
 _CHAT = "https://api.x.ai/v1/chat/completions"
+_CADENCE = (
+    "One clipped line. Start on the verb.",
+    "Two short punches. The second one is shorter.",
+    "Name the thing. Then the damage. Stop.",
+    "Lead with the hard fact. Then four or five words.",
+    "A flat question, then the answer in fewer words.",
+)
+_STOCK = re.compile(
+    r"^(apparently|naturally|well|so|look|of course|basically|honestly|turns out)\b",
+    re.IGNORECASE,
+)
 
 Complete = Callable[[str, str], str | None]
 
@@ -158,28 +169,56 @@ def _lines(text: str) -> tuple[str, ...]:
     return tuple(lines)
 
 
-def _grok(text: str, name: str, note: str = "") -> str | None:
-    key = os.environ.get("XAI_API_KEY", "").strip()
-    if not key:
-        return None
-    model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
+def cadence(seed: str) -> str:
+    """A sentence shape for this story. The next story gets a different one."""
+    total = sum(seed.encode()) or 1
+    return _CADENCE[total % len(_CADENCE)]
+
+
+def joke_prompt(name: str, text: str, note: str = "") -> str:
+    """Instructions for one card. The shape changes with the story."""
     extra = f"{note.strip()}\n" if note.strip() else ""
-    prompt = (
-        f"Say what happened in one or two short sentences for a Discord post about {name}.\n"
-        "Make it funny. Dark, dry, and a little mean about the situation. "
+    return (
+        f"Say what happened for a Discord post about {name}.\n"
+        f"Shape: {cadence(text)}\n"
+        "Keep it under 20 words. Short phrases. "
+        "Prefer short words with a hard consonant: k, t, p, ck, g, d, b. "
+        "Dark, dry, a little mean about the situation.\n"
         "The joke has to already be in the facts. Do not invent a joke, a quote, or a detail. "
         "Do not impersonate anyone. Never be cruel to a private person.\n"
+        "Do not start with Apparently, Naturally, Well, So, Look, Of course, Basically, Honestly, or Turns out. "
+        "Do not use the shape 'Something happened. Apparently, the rest.'\n"
         f"{extra}"
         "Use only the text below.\n"
         "No catchphrases. No hashtags. No links. No @ mentions. No HTML. No slur.\n\n"
         f"{text[:4000]}"
     )
+
+
+def _grok(text: str, name: str, note: str = "") -> str | None:
+    key = os.environ.get("XAI_API_KEY", "").strip()
+    if not key:
+        return None
+    model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
+    written = _complete(key, model, joke_prompt(name, text, note))
+    if written and _stock(written):
+        retry = joke_prompt(name, text, note) + "\nCut the stock opener. New shape. Shorter."
+        written = _complete(key, model, retry) or written
+    return written
+
+
+def _stock(text: str) -> bool:
+    first = text.strip().split("\n", 1)[0]
+    return bool(_STOCK.match(first)) or "apparently" in first.casefold()
+
+
+def _complete(key: str, model: str, prompt: str) -> str | None:
     body = json.dumps(
         {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.8,
-            "max_tokens": 256,
+            "temperature": 0.9,
+            "max_tokens": 120,
             "reasoning_effort": "low",
         }
     ).encode()

@@ -44,11 +44,30 @@ _COMIC = (
 _STOP = {"the", "a", "an", "vs", "and", "of", "to", "for", "in", "on", "nfl", "week", "with", "from"}
 
 
+_GTA_VI = re.compile(r"\b(?:gta[\s-]*(?:vi|6)|grand theft auto[\s-]*(?:vi|6))\b", re.IGNORECASE)
+_GTA_V = re.compile(
+    r"\b(?:gta[\s-]*(?:v|5)|grand theft auto[\s-]*(?:v|5)|gta online|grand theft auto online)\b",
+    re.IGNORECASE,
+)
+
+
+def _gta_vi_only(update: Update) -> bool:
+    """GTA posts are GTA VI. GTA V and GTA Online are skipped."""
+    blob = f"{update.name}\n{update.title}\n" + " ".join(update.lines)
+    if _GTA_VI.search(blob):
+        return True
+    if _GTA_V.search(blob):
+        return False
+    return update.name.casefold() not in {"grand theft auto online", "grand theft auto v", "gta v", "gta 5"}
+
+
 def relevant(update: Update) -> bool:
     """NFL keeps the Bears, and other football only when the item is already a joke.
 
-    College football is skipped unless the item is absurd.
+    College football is skipped unless the item is absurd. GTA V is skipped.
     """
+    if not _gta_vi_only(update):
+        return False
     if update.source != "nfl":
         return True
     blob = f"{update.title}\n{update.url}\n" + " ".join(update.lines)

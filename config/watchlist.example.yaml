@@ -1,12 +1,5 @@
 items:
   - kind: game
-    name: Grand Theft Auto Online
-    urls:
-      - https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/
-    steam_app_id: 271590
-    tvmaze_id: null
-    twitch_login: null
-  - kind: game
     name: Grand Theft Auto VI
     urls:
       - https://www.rockstargames.com/VI

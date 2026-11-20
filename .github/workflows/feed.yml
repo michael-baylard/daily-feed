@@ -22,11 +22,11 @@ jobs:
       - run: uv sync --frozen
       - name: Post the feed
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          if [ -z "$GEMINI_API_KEY" ] || [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "Add GEMINI_API_KEY and DISCORD_WEBHOOK_URL under Settings, Secrets and variables, Actions."
+          if [ -z "$XAI_API_KEY" ] || [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "Add XAI_API_KEY and DISCORD_WEBHOOK_URL under Settings, Secrets and variables, Actions."
             exit 1
           fi
           mkdir -p inbox

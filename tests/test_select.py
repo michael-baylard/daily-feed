@@ -26,6 +26,29 @@ def _nfl(**overrides: object) -> Update:
     return Update(**data)  # type: ignore[arg-type]
 
 
+def test_gta_v_is_dropped_and_gta_vi_stays() -> None:
+    online = _nfl(
+        slug="gta_online",
+        kind=Kind.game,
+        name="Grand Theft Auto Online",
+        title="Take Down the Kortz Center",
+        source="steam",
+        url="https://store.steampowered.com/news/271590",
+    )
+    six = _nfl(
+        slug="gta_vi",
+        kind=Kind.game,
+        name="Grand Theft Auto VI",
+        title="Grand Theft Auto VI Now Available",
+        source="newswire",
+        url="https://www.rockstargames.com/newswire/article/vi",
+    )
+    assert not relevant(online)
+    assert relevant(six)
+    assert not relevant(_nfl(title="GTA V gets one last coat of paint", source="newswire"))
+    assert relevant(_nfl(title="Red Dead Online bonus week", name="Rockstar Games", source="newswire"))
+
+
 def test_bears_stay_and_a_highlights_package_goes() -> None:
     bears = _nfl(title="Bears' Williams throws four", focus="bears", url="https://www.espn.com/nfl/story/bears")
     highlights = _nfl(title="Colts-Texans highlights", url="https://www.espn.com/nfl/story/highlights")

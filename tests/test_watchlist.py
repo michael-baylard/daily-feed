@@ -17,9 +17,7 @@ EXAMPLE = Path(__file__).resolve().parents[1] / "config" / "watchlist.example.ya
 def test_example_has_required_rows():
     watchlist = load_watchlist(EXAMPLE)
     by_name = {(item.kind, item.name): item for item in watchlist.items}
-    online = by_name[Kind.game, "Grand Theft Auto Online"]
-    assert online.steam_app_id == 271590
-    assert any("store.steampowered.com" in url for url in online.urls)
+    assert (Kind.game, "Grand Theft Auto Online") not in by_name
     six = by_name[Kind.game, "Grand Theft Auto VI"]
     assert six.steam_app_id is None
     assert "https://www.rockstargames.com/VI" in six.urls
@@ -44,7 +42,7 @@ def test_example_has_required_rows():
     assert by_name[Kind.league, "NFL"].name == "NFL"
     conduct = by_name[Kind.publisher, "Conduct"]
     assert "https://www.espn.com/search/_/q/racial%20slur" in conduct.urls
-    assert len(watchlist.items) == 11
+    assert len(watchlist.items) == 10
 
 
 def test_example_omits_slug_and_load_fills_it():

@@ -22,12 +22,6 @@ url: https://www.twitch.tv/burntpeanut
 
 ---
 type: game
-name: Grand Theft Auto Online
-steam_app_id: 271590
-url: https://store.steampowered.com/app/271590/Grand_Theft_Auto_V/
-
----
-type: game
 name: Grand Theft Auto VI
 url: https://www.rockstargames.com/VI
 

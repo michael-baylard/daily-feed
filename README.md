@@ -12,7 +12,7 @@ Only rows on the watchlist can post. Copy `config/watchlist.example.yaml` to sta
 
 | Kind | Rows |
 |---|---|
-| game | Grand Theft Auto Online, Grand Theft Auto VI, ROB RUN |
+| game | Grand Theft Auto VI, ROB RUN |
 | publisher | Rockstar Games, Take-Two Interactive, Marvel, DC Comics, Conduct |
 | league | NFL |
 | person | Tfue, BurntPeanut |

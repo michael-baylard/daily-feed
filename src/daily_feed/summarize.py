@@ -1,7 +1,7 @@
 """A short "what happened" line for a news post.
 
-Gemini 3.8 Flash writes it. GitHub Actions passes ``GEMINI_API_KEY``
-from the repository secret. There is no local summary.
+Grok 4.7 writes it. GitHub Actions passes ``XAI_API_KEY`` from the
+repository secret. There is no local summary.
 """
 
 from __future__ import annotations
@@ -28,7 +28,8 @@ _SLUR = re.compile(
     re.IGNORECASE,
 )
 _LIMIT = 180
-_MODEL = "gemini-3.8-flash"
+_MODEL = "grok-4.7"
+_CHAT = "https://api.x.ai/v1/chat/completions"
 
 Complete = Callable[[str, str], str | None]
 
@@ -60,7 +61,7 @@ def describe(
     if not source:
         return ()
     payload = f"Title: {plain_title}\nText: {source}"
-    written = complete(payload, name) if complete is not None else _gemini(payload, name, note)
+    written = complete(payload, name) if complete is not None else _grok(payload, name, note)
     return _mask_lines(_lines(written or ""))
 
 
@@ -157,50 +158,44 @@ def _lines(text: str) -> tuple[str, ...]:
     return tuple(lines)
 
 
-def _gemini(text: str, name: str, note: str = "") -> str | None:
-    key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
+def _grok(text: str, name: str, note: str = "") -> str | None:
+    key = os.environ.get("XAI_API_KEY", "").strip()
     if not key:
         return None
-    model = os.environ.get("GEMINI_MODEL", "").strip() or _MODEL
+    model = os.environ.get("XAI_MODEL", "").strip() or _MODEL
     extra = f"{note.strip()}\n" if note.strip() else ""
     prompt = (
         f"Say what happened in one or two short sentences for a Discord post about {name}.\n"
-        "Write it dry and deadpan, the way a late-night comic tells a true story. "
-        "Ironic, a little mean to the situation, never mean to a private person. "
-        "Do not impersonate anyone. Do not invent a joke. Do not add facts.\n"
+        "Make it funny. Dark, dry, and a little mean about the situation. "
+        "The joke has to already be in the facts. Do not invent a joke, a quote, or a detail. "
+        "Do not impersonate anyone. Never be cruel to a private person.\n"
         f"{extra}"
         "Use only the text below.\n"
         "No catchphrases. No hashtags. No links. No @ mentions. No HTML. No slur.\n\n"
         f"{text[:4000]}"
     )
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{model}:generateContent?key={key}"
-    )
     body = json.dumps(
         {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "maxOutputTokens": 256,
-                "temperature": 0.6,
-                "thinkingConfig": {"thinkingBudget": 0},
-            },
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.8,
+            "max_tokens": 256,
+            "reasoning_effort": "low",
         }
     ).encode()
     request = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}
+        _CHAT,
+        data=body,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=30) as response:
             payload = json.load(response)
     except (OSError, ValueError, json.JSONDecodeError):
         return None
-    candidates = payload.get("candidates") if isinstance(payload, dict) else None
-    if not candidates or not isinstance(candidates, list):
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not choices or not isinstance(choices, list) or not isinstance(choices[0], dict):
         return None
-    content = candidates[0].get("content") if isinstance(candidates[0], dict) else None
-    parts = content.get("parts") if isinstance(content, dict) else None
-    if not parts or not isinstance(parts, list) or not isinstance(parts[0], dict):
-        return None
-    written = parts[0].get("text")
+    message = choices[0].get("message") if isinstance(choices[0].get("message"), dict) else {}
+    written = message.get("content")
     return written if isinstance(written, str) else None

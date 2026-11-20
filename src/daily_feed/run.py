@@ -244,7 +244,7 @@ def _page(item: WatchItem, data: dict, hashes: dict, now: datetime, day_due: boo
 def _needs_model(update: Update) -> bool:
     """A news card with no short description has to be written by the model.
 
-    NFL always goes through the model so the line is written in the feed's voice.
+    NFL always goes through Grok so the line is written in the feed's voice.
     A missing key leaves a short NFL sentence as the source wrote it.
     """
     if update.source not in {"steam", "newswire", "nfl", "conduct"}:
@@ -260,7 +260,7 @@ def _needs_model(update: Update) -> bool:
 
 
 def _short(update: Update | None) -> Update | None:
-    """Ask Gemini Flash what happened. Twitch titles and countdowns stay as written."""
+    """Ask Grok what happened. Twitch titles and countdowns stay as written."""
     if update is None:
         return update
     if update.source == "conduct":
